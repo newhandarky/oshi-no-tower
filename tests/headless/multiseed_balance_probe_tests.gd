@@ -14,6 +14,14 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	_test_auto_play_proxy_scores_card_depth_v1_effects()
+	if not failures.is_empty():
+		for failure in failures:
+			push_error(failure)
+		print("multiseed_balance_probe_tests: failed (%d)" % failures.size())
+		quit(1)
+		return
+
 	var character_seed_bases := {
 		"subaru": 2026052100,
 		"botan": 2026052200,
@@ -26,7 +34,9 @@ func _run() -> void:
 
 	for log_entry in run_logs:
 		print("multiseed_balance_probe_log: %s" % JSON.stringify(log_entry))
-	print("multiseed_balance_probe_summary: %s" % JSON.stringify(_build_summary()))
+	var summary := _build_summary()
+	print("multiseed_balance_probe_summary: %s" % JSON.stringify(summary))
+	_validate_probe_summary(summary)
 
 	if failures.is_empty():
 		print("multiseed_balance_probe_tests: ok")
@@ -277,6 +287,8 @@ func _auto_play_card_score(app: Node, card: Dictionary) -> float:
 	for effect_variant in card.get("effects", []):
 		var effect: Dictionary = effect_variant
 		score += _auto_play_effect_score(effect, enemy_attacking)
+	if int(app.combat.next_attack_bonus) > 0 and str(card.get("kind", "")) == "attack":
+		score += float(int(app.combat.next_attack_bonus)) * 5.5
 	if str(card.get("kind", "")) == "attack":
 		score += 4.0
 	if str(card.get("kind", "")) == "support":
@@ -292,6 +304,17 @@ func _auto_play_effect_score(effect: Dictionary, enemy_attacking: bool) -> float
 			return float(int(effect.get("amount", 0))) * (2.0 if enemy_attacking else 0.35)
 		"draw":
 			return float(int(effect.get("amount", 0))) * 4.0
+		"draw_from_discard":
+			return float(int(effect.get("amount", 1))) * 6.5
+		"next_attack_bonus":
+			return float(int(effect.get("amount", 0))) * 5.0
+		"temporary_card":
+			var temp_card: Dictionary = effect.get("card", {})
+			var temp_score := 6.0
+			for nested_variant in temp_card.get("effects", []):
+				var nested: Dictionary = nested_variant
+				temp_score += _auto_play_effect_score(nested, enemy_attacking) * 0.65
+			return temp_score
 		"draw_if_status":
 			return float(int(effect.get("amount", 0))) * 3.0
 		"energy":
@@ -313,6 +336,19 @@ func _auto_play_effect_score(effect: Dictionary, enemy_attacking: bool) -> float
 		"summon_hp_damage":
 			return float(int(effect.get("base", 0)) + int(effect.get("per_hp", 1)) * 8) * 2.4
 	return 0.0
+
+func _test_auto_play_proxy_scores_card_depth_v1_effects() -> void:
+	_expect_true(_auto_play_effect_score({ "type": "next_attack_bonus", "amount": 8 }, true) > 0.0, "auto-play proxy 需評價 next_attack_bonus，避免低估 setup 爆發牌")
+	_expect_true(_auto_play_effect_score({ "type": "draw_from_discard", "amount": 1, "kind": "attack" }, true) > 0.0, "auto-play proxy 需評價 draw_from_discard，避免低估回收橋接牌")
+	_expect_true(_auto_play_effect_score({
+		"type": "temporary_card",
+		"amount": 1,
+		"card": { "effects": [{ "type": "damage", "amount": 4, "hits": 1 }, { "type": "status", "target": "enemy", "status_id": "marker", "amount": 1, "value": 2, "duration": 1 }] }
+	}, true) > 0.0, "auto-play proxy 需評價 temporary_card，避免低估臨時牌 setup")
+
+func _expect_true(actual: bool, message: String) -> void:
+	if not actual:
+		failures.append("%s：expected true, got false" % message)
 
 func _build_summary() -> Dictionary:
 	var summary := {}
@@ -358,6 +394,19 @@ func _build_summary() -> Dictionary:
 		if wins == 0:
 			stats["min_win_hp"] = 0
 	return summary
+
+func _validate_probe_summary(summary: Dictionary) -> void:
+	var minimum_boss_reward_reached := {
+		"subaru": 3,
+		"botan": 3,
+		"azki": 3
+	}
+	for character_id in minimum_boss_reward_reached.keys():
+		var stats: Dictionary = summary.get(str(character_id), {})
+		var reached := int(stats.get("boss_reward_reached", 0))
+		var required := int(minimum_boss_reward_reached[character_id])
+		_expect_true(reached >= required, "%s multiseed 至少應有 %d/%d 抵達 boss_reward，目前 %d/%d" % [str(character_id), required, SEEDS_PER_CHARACTER, reached, SEEDS_PER_CHARACTER])
+		_expect_true(float(stats.get("average_final_floor", 0.0)) >= 12.0, "%s multiseed 平均結束樓層應至少 12，目前 %.2f" % [str(character_id), float(stats.get("average_final_floor", 0.0))])
 
 func _increment_count(counts: Dictionary, key: String) -> void:
 	if key == "":
