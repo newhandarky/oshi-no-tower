@@ -47,6 +47,9 @@ func _run() -> void:
 	_test_summon_heal_restores_laplus_hp()
 	_test_summon_hp_damage_uses_current_laplus_hp()
 	_test_relic_trigger_v2_applies_once_per_turn()
+	_test_relic_triggers_when_next_attack_bonus_is_added()
+	_test_relic_triggers_when_discard_card_is_retrieved()
+	_test_relic_triggers_when_temporary_card_is_created()
 	_test_azki_first_marker_passive_draws_once_per_turn()
 	_test_azki_summon_starts_alive()
 	_test_azki_summon_intercepts_unblocked_damage()
@@ -505,6 +508,59 @@ func _test_relic_trigger_v2_applies_once_per_turn() -> void:
 	engine.try_play_card(state, 0)
 	engine.try_play_card(state, 0)
 	_expect_eq(state.player_block, 4, "once_per_turn trigger v2 新回合應可再次觸發")
+
+func _test_relic_triggers_when_next_attack_bonus_is_added() -> void:
+	var setup_card := { "id": "test-bonus", "name": "Test Bonus", "cost": 0, "kind": "support", "effects": [{ "type": "next_attack_bonus", "amount": 6 }] }
+	var support_relic := {
+		"id": "test-bonus-badge",
+		"name": "Test Bonus Badge",
+		"trigger": "next_attack_bonus_added",
+		"limit": "once_per_turn",
+		"condition": { "bonus_amount_at_least": 1 },
+		"trigger_effects": [{ "effect": "block", "amount": 3 }]
+	}
+	var state = engine.start_combat(30, 30, [setup_card, setup_card.duplicate(true)], _enemy_attack(0, 30), [support_relic])
+
+	engine.try_play_card(state, 0)
+	_expect_eq(state.player_block, 3, "next_attack_bonus_added relic 應在準備下一擊加成時觸發")
+	engine.try_play_card(state, 0)
+	_expect_eq(state.player_block, 3, "once_per_turn next_attack_bonus_added relic 同回合不可重複觸發")
+
+func _test_relic_triggers_when_discard_card_is_retrieved() -> void:
+	var recover_card := { "id": "test-recover", "name": "Test Recover", "cost": 0, "kind": "support", "effects": [{ "type": "draw_from_discard", "amount": 1, "kind": "attack" }] }
+	var attack_card := { "id": "test-attack", "name": "Test Attack", "cost": 0, "kind": "attack", "effects": [{ "type": "damage", "amount": 1, "hits": 1 }] }
+	var support_relic := {
+		"id": "test-reload-badge",
+		"name": "Test Reload Badge",
+		"trigger": "discard_retrieved",
+		"limit": "once_per_turn",
+		"condition": { "retrieved_kind": "attack" },
+		"trigger_effects": [{ "effect": "block", "amount": 4 }]
+	}
+	var state = engine.start_combat(30, 30, [recover_card], _enemy_attack(0, 30), [support_relic])
+	state.discard_pile.append(attack_card.duplicate(true))
+
+	engine.try_play_card(state, 0)
+
+	_expect_eq(state.player_block, 4, "discard_retrieved relic 應在成功取回指定類型棄牌後觸發")
+
+func _test_relic_triggers_when_temporary_card_is_created() -> void:
+	var temp_attack := { "id": "test-temp-attack", "name": "Test Temp Attack", "cost": 0, "kind": "attack", "effects": [{ "type": "damage", "amount": 3, "hits": 1 }] }
+	var creator_card := { "id": "test-temp-maker", "name": "Test Temp Maker", "cost": 0, "kind": "support", "effects": [{ "type": "temporary_card", "card": temp_attack }] }
+	var support_relic := {
+		"id": "test-temp-badge",
+		"name": "Test Temp Badge",
+		"trigger": "temporary_card_created",
+		"limit": "once_per_turn",
+		"condition": { "temporary_card_kind": "attack", "has_summon": true },
+		"trigger_effects": [{ "effect": "summon_heal", "amount": 5 }]
+	}
+	var state = engine.start_combat(30, 30, [creator_card], _enemy_attack(0, 30), [support_relic], false, {}, _azki_summon())
+	state.summon_hp = 1
+
+	engine.try_play_card(state, 0)
+
+	_expect_eq(state.summon_hp, 6, "temporary_card_created relic 應可回復 Laplus，支援 AZKi 臨時牌路線")
 
 func _test_azki_first_marker_passive_draws_once_per_turn() -> void:
 	var passive: Dictionary = database.get_character("azki").get("passive", {})

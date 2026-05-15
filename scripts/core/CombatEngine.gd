@@ -219,6 +219,55 @@ func _apply_card_played_relic_v2(state, relic: Dictionary, card: Dictionary) -> 
 		state.relic_turn_flags[relic_id] = true
 	_apply_relic_effects(state, relic)
 
+func _apply_context_relics(state, trigger: String, context: Dictionary) -> void:
+	for relic in state.relics:
+		if str(relic.get("trigger", "")) != trigger:
+			continue
+		var relic_id := str(relic.get("id", ""))
+		var limit := str(relic.get("limit", ""))
+		if limit == "once_per_combat" and bool(state.relic_flags.get(relic_id, false)):
+			continue
+		if limit == "once_per_turn" and bool(state.relic_turn_flags.get(relic_id, false)):
+			continue
+		var condition: Dictionary = relic.get("condition", {})
+		if not _relic_context_condition_matches(state, condition, context):
+			continue
+		if limit == "once_per_combat":
+			state.relic_flags[relic_id] = true
+		elif limit == "once_per_turn":
+			state.relic_turn_flags[relic_id] = true
+		_apply_relic_trigger_effects(state, relic)
+
+func _relic_context_condition_matches(state, condition: Dictionary, context: Dictionary) -> bool:
+	if condition.is_empty():
+		return true
+	if condition.has("bonus_amount_at_least") and int(context.get("bonus_amount", 0)) < int(condition.get("bonus_amount_at_least", 0)):
+		return false
+	if condition.has("retrieved_kind") and not _context_cards_include_kind(context.get("retrieved_cards", []), str(condition.get("retrieved_kind", ""))):
+		return false
+	if condition.has("temporary_card_kind") and not _context_cards_include_kind(context.get("temporary_cards", []), str(condition.get("temporary_card_kind", ""))):
+		return false
+	if condition.has("has_summon") and bool(condition.get("has_summon", false)) != (str(state.summon_id) != ""):
+		return false
+	return true
+
+func _context_cards_include_kind(cards: Array, expected_kind: String) -> bool:
+	if expected_kind == "":
+		return true
+	for card_variant in cards:
+		var card: Dictionary = card_variant
+		if str(card.get("kind", "")) == expected_kind:
+			return true
+	return false
+
+func _apply_relic_trigger_effects(state, relic: Dictionary) -> void:
+	if relic.has("trigger_effects"):
+		for effect_variant in relic.get("trigger_effects", []):
+			var effect: Dictionary = effect_variant
+			_apply_single_relic_effect(state, relic, effect)
+		return
+	_apply_relic_effects(state, relic)
+
 func _apply_relic_effects(state, relic: Dictionary) -> void:
 	if relic.has("effects"):
 		for effect_variant in relic.get("effects", []):
@@ -239,6 +288,8 @@ func _apply_single_relic_effect(state, relic: Dictionary, effect: Dictionary) ->
 			apply_status(state, "player", { "id": "regen", "value": int(effect.get("amount", 0)), "duration": 99 })
 		"heal":
 			state.player_hp = min(state.player_max_hp, state.player_hp + int(effect.get("amount", 0)))
+		"summon_heal":
+			_heal_summon(state, int(effect.get("amount", 0)))
 		"draw":
 			draw_cards(state, int(effect.get("amount", 0)))
 		"bonus_damage":
@@ -300,11 +351,18 @@ func _resolve_effect(state, effect: Dictionary, card: Dictionary = {}) -> void:
 		"draw":
 			draw_cards(state, int(effect["amount"]))
 		"draw_from_discard":
-			_draw_from_discard(state, int(effect.get("amount", 1)), str(effect.get("kind", "")))
+			var retrieved_cards := _draw_from_discard(state, int(effect.get("amount", 1)), str(effect.get("kind", "")))
+			if not retrieved_cards.is_empty():
+				_apply_context_relics(state, "discard_retrieved", { "retrieved_cards": retrieved_cards })
 		"next_attack_bonus":
-			state.next_attack_bonus += int(effect.get("amount", 0))
+			var bonus_amount := int(effect.get("amount", 0))
+			state.next_attack_bonus += bonus_amount
+			if bonus_amount > 0:
+				_apply_context_relics(state, "next_attack_bonus_added", { "bonus_amount": bonus_amount })
 		"temporary_card":
-			_create_temporary_card(state, effect)
+			var temporary_cards := _create_temporary_card(state, effect)
+			if not temporary_cards.is_empty():
+				_apply_context_relics(state, "temporary_card_created", { "temporary_cards": temporary_cards })
 		"draw_if_status":
 			var target := str(effect.get("target", "enemy"))
 			var statuses: Dictionary = state.player_statuses if target == "player" else state.enemy_statuses
@@ -389,7 +447,8 @@ func _condition_matches(state, condition: Dictionary, card: Dictionary = {}) -> 
 		return false
 	return true
 
-func _draw_from_discard(state, amount: int, kind := "") -> void:
+func _draw_from_discard(state, amount: int, kind := "") -> Array[Dictionary]:
+	var retrieved_cards: Array[Dictionary] = []
 	for _i in range(max(0, amount)):
 		var found_index := -1
 		for discard_index in range(state.discard_pile.size() - 1, -1, -1):
@@ -398,20 +457,27 @@ func _draw_from_discard(state, amount: int, kind := "") -> void:
 				found_index = discard_index
 				break
 		if found_index < 0:
-			return
+			return retrieved_cards
 		var card: Dictionary = state.discard_pile[found_index]
 		state.discard_pile.remove_at(found_index)
-		state.hand.append(_clear_runtime_card_flags(card))
+		var retrieved_card := _clear_runtime_card_flags(card)
+		state.hand.append(retrieved_card)
+		retrieved_cards.append(retrieved_card)
+	return retrieved_cards
 
-func _create_temporary_card(state, effect: Dictionary) -> void:
+func _create_temporary_card(state, effect: Dictionary) -> Array[Dictionary]:
+	var temporary_cards: Array[Dictionary] = []
 	var template: Dictionary = effect.get("card", {})
 	if template.is_empty():
-		return
+		return temporary_cards
 	var amount: int = max(1, int(effect.get("amount", 1)))
 	for _i in range(amount):
 		var card := template.duplicate(true)
 		card["temporary"] = true
-		state.hand.append(_clear_runtime_card_flags(card))
+		var temporary_card := _clear_runtime_card_flags(card)
+		state.hand.append(temporary_card)
+		temporary_cards.append(temporary_card)
+	return temporary_cards
 
 func _heal_summon(state, amount: int) -> void:
 	if amount <= 0 or state.summon_id == "":

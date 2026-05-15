@@ -31,6 +31,7 @@ func _run() -> void:
 	_test_safe_lookup_methods_return_empty_for_missing_ids()
 	_test_battle_gold_rewards_have_clear_progression()
 	_test_relic_data_is_valid()
+	_test_relic_depth_hooks_are_declared()
 	_test_shop_discount_relic_description_matches_runtime_scope()
 	_test_botan_survival_bridge_cards_have_demo_balance_floor()
 	_test_content_pack_1b_cards_and_relics_are_connected()
@@ -473,6 +474,7 @@ func _test_relic_data_is_valid() -> void:
 	_expect_true(database.relics.size() >= 8, "V2 relic 至少需要 8 個")
 	var required_ids := { "cheer-lightstick": true, "duck-whistle": true, "shishiro-crosshair": true }
 	var allowed_hooks := { "combat_start": true, "first_attack_played": true, "first_cheap_card_played": true, "first_two_cost_played": true, "first_marker_card_played": true, "turn_start": true, "battle_reward": true, "shop_enter": true, "room_enter": true }
+	var allowed_triggers := { "": true, "card_played": true, "next_attack_bonus_added": true, "discard_retrieved": true, "temporary_card_created": true }
 	var seen_ids: Dictionary = {}
 	for relic in database.relics:
 		var relic_id := str(relic.get("id", ""))
@@ -482,10 +484,27 @@ func _test_relic_data_is_valid() -> void:
 		_expect_not_empty(str(relic.get("name", "")), "%s relic 名稱不可為空" % relic_id)
 		_expect_not_empty(str(relic.get("description", "")), "%s relic 說明不可為空" % relic_id)
 		_expect_true(allowed_hooks.has(str(relic.get("hook", ""))), "%s relic hook 不合法：%s" % [relic_id, str(relic.get("hook", ""))])
+		_expect_true(allowed_triggers.has(str(relic.get("trigger", ""))), "%s relic trigger 不合法：%s" % [relic_id, str(relic.get("trigger", ""))])
 		_expect_true(relic.get("source_rules", []).size() > 0, "%s relic source_rules 不可為空" % relic_id)
 		_expect_true(int(relic.get("amount", 0)) > 0, "%s relic amount 必須大於 0" % relic_id)
 	for relic_id in required_ids.keys():
 		_expect_true(_relic_exists(str(relic_id)), "必要 relic 不存在：%s" % str(relic_id))
+
+func _test_relic_depth_hooks_are_declared() -> void:
+	var required_triggers := {
+		"next_attack_bonus_added": false,
+		"discard_retrieved": false,
+		"temporary_card_created": false
+	}
+	for relic in database.relics:
+		var trigger := str(relic.get("trigger", ""))
+		if not required_triggers.has(trigger):
+			continue
+		required_triggers[trigger] = true
+		_expect_true(relic.has("trigger_effects"), "%s relic depth trigger 必須使用 trigger_effects，避免覆蓋既有 hook 效果" % str(relic.get("id", "")))
+		_expect_true(relic.get("archetype_tags", []).size() > 0, "%s relic depth trigger 必須標記 archetype_tags" % str(relic.get("id", "")))
+	for trigger in required_triggers.keys():
+		_expect_true(bool(required_triggers[trigger]), "005 relic depth hooks 必須宣告 trigger：%s" % str(trigger))
 
 func _test_shop_discount_relic_description_matches_runtime_scope() -> void:
 	var shop_coupon := database.get_relic("shop-coupon")
