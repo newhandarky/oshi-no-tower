@@ -18,6 +18,14 @@
 - `temporary_card`：建立本場戰鬥臨時牌；打出後進 Exhaust，不進 run deck。
 - `upgrade_signal`：卡牌 metadata，用來標示升級偏向穩定、爆發、抽牌、scaling 或 setup。
 
+## Relic Hook Extension 005
+
+005 階段不新增完整 relic 子系統，而是讓既有 relic 能掛到 v1 card depth effect 成功發生的瞬間。這批 hook 使用 `trigger_effects`，避免覆蓋既有 `hook` / `effects` 行為。
+
+- `next_attack_bonus_added`：`duck-whistle` 會在每回合第一次準備下一擊追加傷害時提供額外格擋，支援 Subaru cheap-chain / tempo-block。
+- `discard_retrieved`：`shishiro-crosshair` 會在每回合第一次從棄牌堆取回攻擊牌時提供額外格擋，支援 Botan fortress-counter。
+- `temporary_card_created`：`unarchived-archive` 會在 AZKi 每回合第一次建立攻擊臨時牌時回復 Laplus HP，支援 marker-loop / laplus-guard。
+
 ## Archetype Lines
 
 ### Subaru: `cheap_chain + tempo_block`
