@@ -43,7 +43,7 @@ func try_play_card(state, hand_index: int) -> bool:
 	_apply_card_played_passive(state, card)
 	for effect in card["effects"]:
 		_resolve_effect(state, effect, card)
-	if bool(card.get("exhaust_on_play", false)) or _card_has_effect_type(card, "exhaust_on_play"):
+	if bool(card.get("temporary", false)) or bool(card.get("exhaust_on_play", false)) or _card_has_effect_type(card, "exhaust_on_play"):
 		state.exhaust_pile.append(_clear_runtime_card_flags(card))
 	else:
 		state.discard_pile.append(_clear_runtime_card_flags(card))
@@ -57,6 +57,7 @@ func try_play_card(state, hand_index: int) -> bool:
 func end_player_turn(state) -> String:
 	_apply_end_turn_hand_effects(state)
 	_move_end_turn_hand_cards(state)
+	state.next_attack_bonus = 0
 	_resolve_enemy_action(state)
 
 	if state.player_hp <= 0:
@@ -288,12 +289,22 @@ func _resolve_effect(state, effect: Dictionary, card: Dictionary = {}) -> void:
 	match effect["type"]:
 		"damage":
 			var hits := int(effect.get("hits", 1))
-			for _i in range(max(1, hits)):
-				_damage_enemy(state, int(effect["amount"]))
+			for hit_index in range(max(1, hits)):
+				var amount := int(effect["amount"])
+				if hit_index == 0 and str(card.get("kind", "")) == "attack" and int(state.next_attack_bonus) > 0:
+					amount += int(state.next_attack_bonus)
+					state.next_attack_bonus = 0
+				_damage_enemy(state, amount)
 		"block":
 			state.player_block += int(effect["amount"])
 		"draw":
 			draw_cards(state, int(effect["amount"]))
+		"draw_from_discard":
+			_draw_from_discard(state, int(effect.get("amount", 1)), str(effect.get("kind", "")))
+		"next_attack_bonus":
+			state.next_attack_bonus += int(effect.get("amount", 0))
+		"temporary_card":
+			_create_temporary_card(state, effect)
 		"draw_if_status":
 			var target := str(effect.get("target", "enemy"))
 			var statuses: Dictionary = state.player_statuses if target == "player" else state.enemy_statuses
@@ -368,6 +379,8 @@ func _condition_matches(state, condition: Dictionary, card: Dictionary = {}) -> 
 		return false
 	if condition.has("retained_card") and bool(condition.get("retained_card", false)) != bool(card.get("_retained_from_previous_turn", false)):
 		return false
+	if condition.has("exhaust_count_at_least") and state.exhaust_pile.size() < int(condition.get("exhaust_count_at_least", 0)):
+		return false
 	if condition.has("card_cost_at_most") and int(card.get("cost", 0)) > int(condition.get("card_cost_at_most", 0)):
 		return false
 	if condition.has("card_cost_at_least") and int(card.get("cost", 0)) < int(condition.get("card_cost_at_least", 0)):
@@ -375,6 +388,30 @@ func _condition_matches(state, condition: Dictionary, card: Dictionary = {}) -> 
 	if condition.has("card_kind") and str(card.get("kind", "")) != str(condition.get("card_kind", "")):
 		return false
 	return true
+
+func _draw_from_discard(state, amount: int, kind := "") -> void:
+	for _i in range(max(0, amount)):
+		var found_index := -1
+		for discard_index in range(state.discard_pile.size() - 1, -1, -1):
+			var candidate: Dictionary = state.discard_pile[discard_index]
+			if kind == "" or str(candidate.get("kind", "")) == kind:
+				found_index = discard_index
+				break
+		if found_index < 0:
+			return
+		var card: Dictionary = state.discard_pile[found_index]
+		state.discard_pile.remove_at(found_index)
+		state.hand.append(_clear_runtime_card_flags(card))
+
+func _create_temporary_card(state, effect: Dictionary) -> void:
+	var template: Dictionary = effect.get("card", {})
+	if template.is_empty():
+		return
+	var amount: int = max(1, int(effect.get("amount", 1)))
+	for _i in range(amount):
+		var card := template.duplicate(true)
+		card["temporary"] = true
+		state.hand.append(_clear_runtime_card_flags(card))
 
 func _heal_summon(state, amount: int) -> void:
 	if amount <= 0 or state.summon_id == "":

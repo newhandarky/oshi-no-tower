@@ -24,6 +24,7 @@ func _run() -> void:
 	_test_azki_midrun_reward_turns_laplus_bridge_into_payoff()
 	_test_botan_midrun_reward_limits_repeat_rare_payoff()
 	_test_azki_midrun_reward_does_not_repeat_existing_payoff()
+	_test_reward_draft_fills_missing_role_gaps()
 
 	if failures.is_empty():
 		print("reward_draft_tests: ok")
@@ -158,6 +159,28 @@ func _test_azki_midrun_reward_does_not_repeat_existing_payoff() -> void:
 	_expect_false(result.has("azki-laplus-overflow") or result.has("azki-necrobinder-finale"), "AZKi 已有 Laplus payoff 時不應繼續重複塞同名收束牌")
 	_expect_true(result.has("azki-laplus-cover") or result.has("azki-laplus-reposition") or result.has("azki-safe-route") or result.has("azki-laplus-combo"), "AZKi 已有 payoff 後 reward 應補防守橋接或不同收束")
 
+func _test_reward_draft_fills_missing_role_gaps() -> void:
+	var subaru_no_payoff_deck := [
+		"subaru-opening-quack", "subaru-combo-boost", "subaru-crowd-cover",
+		"subaru-new-oshi-call", "subaru-cheer-loop", "subaru-rhythm-guard"
+	]
+	var subaru_result: Array[String] = drafter.draft(database, _subaru_pool(), subaru_no_payoff_deck, [], 3, 9, 202605241)
+	_expect_true(_any_card_has_role(subaru_result, "payoff") or _any_card_has_role(subaru_result, "scaling"), "deck 已有 setup/bridge/defense 但缺收束時，reward 應補 payoff 或 scaling")
+
+	var botan_no_defense_deck := [
+		"botan-heavy-shot", "botan-piercing-round", "botan-perfect-line",
+		"botan-range-finder", "botan-kill-zone", "botan-burst"
+	]
+	var botan_result: Array[String] = drafter.draft(database, _botan_pool(), botan_no_defense_deck, [], 3, 9, 202605242)
+	_expect_true(_any_card_has_role(botan_result, "defense"), "deck 已有 Botan setup/payoff 但防守密度低時，reward 應補 defense")
+
+	var azki_no_scaling_deck := [
+		"azki-route-marker", "azki-phantom-route", "azki-necro-recall",
+		"azki-laplus-guard-order", "azki-dark-tether", "azki-marker-echo"
+	]
+	var azki_result: Array[String] = drafter.draft(database, _azki_pool(), azki_no_scaling_deck, [], 3, 12, 202605243)
+	_expect_true(_any_card_has_role(azki_result, "scaling"), "deck 已有 AZKi setup/defense/bridge 但缺 scaling 時，reward 應補 scaling")
+
 func _subaru_pool() -> Array[String]:
 	return [
 		"subaru-duck-rush", "subaru-draw-breath", "subaru-tsukkomi", "subaru-second-wind",
@@ -165,7 +188,8 @@ func _subaru_pool() -> Array[String]:
 		"subaru-team-rush", "subaru-hype-call", "subaru-duck-feint", "subaru-cheer-recover",
 		"subaru-duck-tempo", "subaru-teetee-guard", "subaru-desk-reaction", "subaru-blue-wave",
 		"subaru-new-oshi-call", "subaru-opening-quack", "subaru-crowd-cover",
-		"subaru-table-slam-loop", "subaru-unstoppable-cheer"
+		"subaru-table-slam-loop", "subaru-unstoppable-cheer", "subaru-combo-boost",
+		"subaru-encore-recall", "subaru-afterimage-table"
 	]
 
 func _botan_pool() -> Array[String]:
@@ -175,7 +199,8 @@ func _botan_pool() -> Array[String]:
 		"botan-suppressive-fire", "botan-tactical-focus", "botan-medkit-cover",
 		"botan-button-check", "botan-clean-scope", "botan-calm-burst", "botan-precise-cover",
 		"botan-funds-prepared", "botan-range-finder", "botan-overwatch",
-		"botan-piercing-round", "botan-perfect-line"
+		"botan-piercing-round", "botan-perfect-line", "botan-kill-zone",
+		"botan-cover-reload", "botan-flashbang-round"
 	]
 
 func _azki_pool() -> Array[String]:
@@ -187,7 +212,8 @@ func _azki_pool() -> Array[String]:
 		"azki-laplus-cover", "azki-coordinate-barrage", "azki-laplus-combo",
 		"azki-marker-echo", "azki-laplus-reposition", "azki-route-marker",
 		"azki-laplus-guard-order", "azki-laplus-contract", "azki-dark-tether",
-		"azki-singing-coordinate", "azki-laplus-overflow", "azki-necrobinder-finale"
+		"azki-singing-coordinate", "azki-laplus-overflow", "azki-necrobinder-finale",
+		"azki-phantom-route", "azki-necro-recall", "azki-laplus-release"
 	]
 
 func _any_card_has_archetype(card_ids: Array[String], archetype: String) -> bool:

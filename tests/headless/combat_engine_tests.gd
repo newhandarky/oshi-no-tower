@@ -39,6 +39,11 @@ func _run() -> void:
 	_test_cards_played_count_conditional_effect_and_reset()
 	_test_retain_keeps_card_and_exhaust_on_play_exhausts_card()
 	_test_retained_runtime_marker_is_cleared_after_play()
+	_test_next_attack_bonus_applies_to_next_attack_once()
+	_test_next_attack_bonus_expires_at_turn_end()
+	_test_draw_from_discard_recovers_matching_card_to_hand()
+	_test_exhaust_count_condition_enables_payoff()
+	_test_temporary_card_is_created_and_exhausts_when_played()
 	_test_summon_heal_restores_laplus_hp()
 	_test_summon_hp_damage_uses_current_laplus_hp()
 	_test_relic_trigger_v2_applies_once_per_turn()
@@ -369,6 +374,82 @@ func _test_retained_runtime_marker_is_cleared_after_play() -> void:
 
 	_expect_eq(state.discard_pile.size(), 1, "保留牌打出後應進 discard pile")
 	_expect_false(bool(state.discard_pile[0].get("_retained_from_previous_turn", false)), "打出保留牌後不應把 runtime retain 標記帶進 discard pile")
+
+func _test_next_attack_bonus_applies_to_next_attack_once() -> void:
+	var setup_card := { "id": "test-bonus", "name": "Test Bonus", "cost": 0, "kind": "support", "effects": [{ "type": "next_attack_bonus", "amount": 5 }] }
+	var attack_card := { "id": "test-attack", "name": "Test Attack", "cost": 0, "kind": "attack", "effects": [{ "type": "damage", "amount": 4, "hits": 1 }] }
+	var state = engine.start_combat(30, 30, [setup_card, attack_card, attack_card.duplicate(true)], _enemy_attack(0, 40))
+
+	engine.try_play_card(state, 0)
+	engine.try_play_card(state, 0)
+	_expect_eq(state.enemy_hp, 31, "next_attack_bonus 應加到下一張攻擊牌的第一段傷害")
+	engine.try_play_card(state, 0)
+	_expect_eq(state.enemy_hp, 27, "next_attack_bonus 只應消耗一次")
+
+func _test_next_attack_bonus_expires_at_turn_end() -> void:
+	var setup_card := { "id": "test-bonus", "name": "Test Bonus", "cost": 0, "kind": "support", "effects": [{ "type": "next_attack_bonus", "amount": 5 }] }
+	var attack_card := { "id": "test-attack", "name": "Test Attack", "cost": 0, "kind": "attack", "effects": [{ "type": "damage", "amount": 4, "hits": 1 }] }
+	var state = engine.start_combat(30, 30, [setup_card, attack_card], _enemy_attack(0, 40))
+
+	engine.try_play_card(state, 0)
+	engine.end_player_turn(state)
+	for index in range(state.hand.size()):
+		if str(state.hand[index].get("id", "")) == "test-attack":
+			engine.try_play_card(state, index)
+			break
+
+	_expect_eq(state.enemy_hp, 36, "next_attack_bonus 應只存在本回合，結束回合後不應保留")
+
+func _test_draw_from_discard_recovers_matching_card_to_hand() -> void:
+	var recover_card := { "id": "test-recover", "name": "Test Recover", "cost": 0, "kind": "support", "effects": [{ "type": "draw_from_discard", "amount": 1, "kind": "attack" }] }
+	var attack_card := { "id": "test-attack", "name": "Test Attack", "cost": 0, "kind": "attack", "effects": [{ "type": "damage", "amount": 1, "hits": 1 }] }
+	var defense_card := { "id": "test-defense", "name": "Test Defense", "cost": 0, "kind": "defense", "effects": [{ "type": "block", "amount": 1 }] }
+	var state = engine.start_combat(30, 30, [recover_card], _enemy_attack(0, 30))
+	state.discard_pile.append(defense_card.duplicate(true))
+	state.discard_pile.append(attack_card.duplicate(true))
+
+	engine.try_play_card(state, 0)
+
+	_expect_eq(state.hand.size(), 1, "draw_from_discard 應把符合條件的棄牌拿回手牌")
+	if state.hand.size() > 0:
+		_expect_eq(str(state.hand[0].get("id", "")), "test-attack", "draw_from_discard 應依 kind 選取攻擊牌")
+	_expect_eq(state.discard_pile.size(), 2, "draw_from_discard 應從棄牌堆移除被取回的牌，來源牌仍會正常進 discard")
+
+func _test_exhaust_count_condition_enables_payoff() -> void:
+	var exhaust_card := { "id": "test-exhaust", "name": "Test Exhaust", "cost": 0, "kind": "support", "exhaust_on_play": true, "effects": [{ "type": "draw", "amount": 0 }] }
+	var payoff_card := {
+		"id": "test-exhaust-payoff",
+		"name": "Test Exhaust Payoff",
+		"cost": 0,
+		"kind": "defense",
+		"effects": [{
+			"type": "conditional",
+			"condition": { "exhaust_count_at_least": 1 },
+			"effects": [{ "type": "block", "amount": 8 }]
+		}]
+	}
+	var state = engine.start_combat(30, 30, [payoff_card.duplicate(true), exhaust_card.duplicate(true), payoff_card.duplicate(true)], _enemy_attack(0, 30))
+
+	engine.try_play_card(state, 0)
+	_expect_eq(state.player_block, 0, "exhaust_count_at_least 未達成時不應觸發")
+	engine.try_play_card(state, 0)
+	engine.try_play_card(state, 0)
+	_expect_eq(state.player_block, 8, "exhaust_count_at_least 達成後應觸發 payoff")
+
+func _test_temporary_card_is_created_and_exhausts_when_played() -> void:
+	var temp_attack := { "id": "test-temp-attack", "name": "Test Temp Attack", "cost": 0, "kind": "attack", "effects": [{ "type": "damage", "amount": 3, "hits": 1 }] }
+	var creator_card := { "id": "test-temp-maker", "name": "Test Temp Maker", "cost": 0, "kind": "support", "effects": [{ "type": "temporary_card", "card": temp_attack }] }
+	var state = engine.start_combat(30, 30, [creator_card], _enemy_attack(0, 20))
+
+	engine.try_play_card(state, 0)
+	_expect_eq(state.hand.size(), 1, "temporary_card 應建立臨時手牌")
+	if state.hand.size() > 0:
+		_expect_eq(str(state.hand[0].get("id", "")), "test-temp-attack", "temporary_card 應保留指定 card id")
+		_expect_true(bool(state.hand[0].get("temporary", false)), "temporary_card 建立的牌需標記 temporary")
+		engine.try_play_card(state, 0)
+		_expect_eq(state.enemy_hp, 17, "temporary card 應可正常打出")
+		_expect_eq(state.exhaust_pile.size(), 1, "temporary card 打出後應進 exhaust，不進 discard")
+		_expect_eq(state.discard_pile.size(), 1, "建立 temporary 的來源牌仍依原規則進 discard")
 
 func _test_summon_heal_restores_laplus_hp() -> void:
 	var summon_heal_card := { "id": "test-summon-heal", "name": "Test Summon Heal", "cost": 0, "kind": "defense", "effects": [{ "type": "summon_heal", "amount": 3 }] }
