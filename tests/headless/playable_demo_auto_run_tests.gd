@@ -1,0 +1,524 @@
+extends SceneTree
+
+const MainScene := preload("res://scenes/main.tscn")
+const CombatEngineScript := preload("res://scripts/core/CombatEngine.gd")
+const RuntimeDatabaseScript := preload("res://scripts/data/RuntimeDatabase.gd")
+
+const MAX_NODE_VISITS := 16
+const MAX_RUN_STEPS := 80
+const MAX_COMBAT_TURNS := 80
+
+var failures: Array[String] = []
+var run_logs: Array[Dictionary] = []
+var database = RuntimeDatabaseScript.new()
+var combat_engine = CombatEngineScript.new()
+
+func _initialize() -> void:
+	call_deferred("_run")
+
+func _run() -> void:
+	var cases := [
+		{ "id": "subaru", "seed": 2026051341 },
+		{ "id": "botan", "seed": 2026051342 },
+		{ "id": "azki", "seed": 2026051343 }
+	]
+	for character_case in cases:
+		await _run_auto_case(str(character_case["id"]), int(character_case["seed"]))
+
+	await _test_chapter_2_transition_auto_proxy()
+	await _test_azki_forced_laplus_actions()
+	await _test_azki_marker_fallback_proxy()
+	_test_boss_warning_proxy()
+
+	for log_entry in run_logs:
+		print("playable_demo_auto_run_log: %s" % JSON.stringify(log_entry))
+
+	if failures.is_empty():
+		print("playable_demo_auto_run_tests: ok")
+		quit(0)
+	else:
+		for failure in failures:
+			push_error(failure)
+		print("playable_demo_auto_run_tests: failed (%d)" % failures.size())
+		quit(1)
+
+func _run_auto_case(character_id: String, run_seed: int) -> void:
+	var app = MainScene.instantiate()
+	root.add_child(app)
+	await process_frame
+
+	seed(run_seed)
+	app.run_state.start_random_run(app.database, character_id, run_seed)
+	app.show_map()
+	await process_frame
+
+	var log := {
+		"character_id": character_id,
+		"seed": run_seed,
+		"final_screen": "",
+		"final_floor": 0,
+		"boss_id": _selected_boss_id(app),
+		"hp": 0,
+		"gold": 0,
+		"deck_count": 0,
+		"relic_count": 0,
+		"event_battle_count": 0,
+		"combat_count": 0,
+		"elite_count": 0,
+		"visited_node_count": 0,
+		"defeat_enemy_id": "",
+		"defeat_floor": 0,
+		"combat_start_hp": 0,
+		"combat_start_deck_ids": [],
+		"combat_start_relic_ids": [],
+		"azki_actions_seen": [],
+		"result": "failed"
+	}
+
+	_expect_eq(str(app.current_screen), "map", "%s auto-run 應可進入 random map" % character_id)
+	_expect_true(app.run_state.has_active_map(), "%s auto-run 應建立 active_map" % character_id)
+	_expect_false(_screen_text(app).contains("Boss 提示："), "%s map UI 不應顯示 Boss 提示" % character_id)
+
+	var run_steps := 0
+	while run_steps < MAX_RUN_STEPS:
+		run_steps += 1
+		_update_log_from_app(log, app)
+
+		if str(app.current_screen) == "boss_reward":
+			log["result"] = "boss_reward_reached"
+			break
+		if str(app.current_screen) == "run_end":
+			log["result"] = "boss_reward_reached" if bool(app.last_run_end_cleared) else "defeated"
+			break
+		if int(app.run_state.hp) <= 0:
+			app.show_run_end(false)
+			await process_frame
+			log["result"] = "defeated"
+			break
+		if int(log["visited_node_count"]) >= MAX_NODE_VISITS:
+			log["result"] = "stopped_by_guardrail"
+			break
+
+		var handled := await _advance_current_screen(app, log, run_seed + run_steps)
+		if not handled:
+			log["result"] = "failed"
+			break
+
+	if str(log["result"]) == "failed" and run_steps >= MAX_RUN_STEPS:
+		log["result"] = "stopped_by_guardrail"
+
+	_update_log_from_app(log, app)
+	run_logs.append(log.duplicate(true))
+	_validate_run_log(log)
+	app.queue_free()
+
+func _advance_current_screen(app: Node, log: Dictionary, step_seed: int) -> bool:
+	match str(app.current_screen):
+		"map":
+			return await _enter_next_available_node(app, step_seed)
+		"combat":
+			return await _resolve_combat_screen(app, log)
+		"reward":
+			return await _resolve_reward_screen(app)
+		"chest_reward":
+			app._continue_after_chest_reward()
+			await process_frame
+			return true
+		"shop":
+			app._complete_node()
+			app.show_map()
+			await process_frame
+			return true
+		"event":
+			return await _resolve_event_screen(app)
+		"chapter_start_event":
+			return await _resolve_chapter_start_event_screen(app)
+		"event_remove_selection":
+			var removed: bool = app._event_remove_card_at_index(_first_removable_card_index(app), 1)
+			await process_frame
+			return removed
+		"campfire":
+			app.run_state.hp = min(app.run_state.max_hp, app.run_state.hp + 22)
+			app._complete_node()
+			app.show_map()
+			await process_frame
+			return true
+		"shop_remove_selection", "campfire_upgrade_selection":
+			_fail("auto-run 不應卡在選牌子畫面：%s" % str(app.current_screen))
+			return false
+		_:
+			_fail("auto-run 遇到未知 screen：%s" % str(app.current_screen))
+			return false
+
+func _enter_next_available_node(app: Node, step_seed: int) -> bool:
+	if app.run_state.available_node_ids.is_empty():
+		_fail("%s map 沒有可進入節點" % str(app.run_state.character_id))
+		return false
+	var node_id := str(app.run_state.available_node_ids[0])
+	if not app.run_state.set_current_node(node_id):
+		_fail("%s 無法選取可用節點：%s" % [str(app.run_state.character_id), node_id])
+		return false
+	seed(step_seed)
+	app.enter_current_node()
+	await process_frame
+	if str(app.current_screen) == "combat":
+		_expect_true(_screen_text(app).contains("玩法："), "%s combat UI 應顯示玩法提示" % str(app.run_state.character_id))
+	return true
+
+func _resolve_combat_screen(app: Node, log: Dictionary) -> bool:
+	if app.combat == null:
+		_fail("%s combat screen 沒有 CombatState" % str(app.run_state.character_id))
+		return false
+	_expect_true(_screen_text(app).contains("玩法："), "%s combat UI 應保留玩法提示" % str(app.run_state.character_id))
+	log["combat_count"] = int(log.get("combat_count", 0)) + 1
+	if bool(app.event_battle_pending):
+		log["event_battle_count"] = int(log.get("event_battle_count", 0)) + 1
+	if str(app.combat.enemy.get("tier", "")) == "elite":
+		log["elite_count"] = int(log.get("elite_count", 0)) + 1
+	log["combat_start_hp"] = int(app.run_state.hp)
+	log["combat_start_deck_ids"] = app.run_state.deck_ids.duplicate()
+	log["combat_start_relic_ids"] = app.run_state.relic_ids.duplicate()
+
+	var turns := 0
+	while turns < MAX_COMBAT_TURNS and str(app.combat.outcome) == "ongoing":
+		turns += 1
+		var played_this_turn := true
+		while played_this_turn and str(app.combat.outcome) == "ongoing":
+			played_this_turn = _play_first_affordable_non_curse_card(app, log)
+		if str(app.combat.outcome) != "ongoing":
+			break
+		app.combat_engine.end_player_turn(app.combat)
+
+	if str(app.combat.outcome) == "ongoing":
+		_fail("%s combat 超過 guardrail 仍未結束：%s" % [str(app.run_state.character_id), str(app.combat.enemy.get("id", ""))])
+		return false
+	if str(app.combat.outcome) == "defeat":
+		log["defeat_enemy_id"] = str(app.combat.enemy.get("id", ""))
+		log["defeat_floor"] = int(app.run_state.get_current_node(app.database).get("floor", 0))
+		app.run_state.hp = 0
+		app.show_run_end(false)
+		await process_frame
+		return true
+
+	app.run_state.hp = app.combat.player_hp
+	app.run_state.gold += int(app.combat.enemy.get("gold", 0)) + app._battle_reward_gold_bonus()
+	app._grant_combat_relic_reward(app.combat.enemy)
+	if bool(app.event_battle_pending):
+		app.show_reward("事件戰鬥獎勵", app._combat_reward_subtitle(app.combat.enemy), true)
+	elif bool(app.combat.enemy.get("is_boss", false)):
+		app._complete_node()
+		app.show_boss_reward()
+	else:
+		app.show_reward("戰鬥獎勵", app._combat_reward_subtitle(app.combat.enemy), true)
+	await process_frame
+	return true
+
+func _resolve_chapter_start_event_screen(app: Node) -> bool:
+	var options: Array = app.chapter_start_options
+	if options.is_empty():
+		_fail("chapter_start_event 沒有 draft option")
+		return false
+	var resolved: bool = app._resolve_chapter_start_option(options[0].duplicate(true))
+	await process_frame
+	return resolved
+
+func _play_first_affordable_non_curse_card(app: Node, log: Dictionary) -> bool:
+	var best_index := -1
+	var best_score := -99999.0
+	for hand_index in range(app.combat.hand.size()):
+		var card: Dictionary = app.combat.hand[hand_index]
+		if _is_curse_or_unplayable(card):
+			continue
+		if int(app.combat.player_energy) < int(card.get("cost", 0)):
+			continue
+		var score := _auto_play_card_score(app, card)
+		if score > best_score:
+			best_score = score
+			best_index = hand_index
+	if best_index < 0:
+		return false
+	var selected_card: Dictionary = app.combat.hand[best_index]
+	var animation := str(selected_card.get("animation", "idle"))
+	var played: bool = app.combat_engine.try_play_card(app.combat, best_index)
+	if played and str(app.run_state.character_id) == "azki" and animation in ["laplus_dash", "laplus_crash"]:
+		var actions: Array = log.get("azki_actions_seen", [])
+		if not actions.has(animation):
+			actions.append(animation)
+		log["azki_actions_seen"] = actions
+	return played
+
+func _auto_play_card_score(app: Node, card: Dictionary) -> float:
+	var score := 0.0
+	var intent_type := str(app.combat.current_intent.get("type", ""))
+	var enemy_attacking := intent_type in ["attack", "attack_block"]
+	for effect_variant in card.get("effects", []):
+		var effect: Dictionary = effect_variant
+		score += _auto_play_effect_score(effect, enemy_attacking)
+	if str(card.get("kind", "")) == "attack":
+		score += 4.0
+	if str(card.get("kind", "")) == "support":
+		score += 1.5
+	score -= float(int(card.get("cost", 0))) * 0.25
+	return score
+
+func _auto_play_effect_score(effect: Dictionary, enemy_attacking: bool) -> float:
+	match str(effect.get("type", "")):
+		"damage":
+			return float(int(effect.get("amount", 0)) * max(1, int(effect.get("hits", 1)))) * 3.0
+		"block":
+			return float(int(effect.get("amount", 0))) * (2.0 if enemy_attacking else 0.35)
+		"draw":
+			return float(int(effect.get("amount", 0))) * 4.0
+		"draw_if_status":
+			return float(int(effect.get("amount", 0))) * 3.0
+		"energy":
+			return float(int(effect.get("amount", 0))) * 5.0
+		"status":
+			var status_id := str(effect.get("status_id", ""))
+			if status_id in ["vulnerable", "weak", "marker"]:
+				return 9.0
+			if status_id in ["strength", "regen"]:
+				return 7.0
+		"conditional":
+			var nested_score := 0.0
+			for nested_variant in effect.get("effects", []):
+				var nested: Dictionary = nested_variant
+				nested_score += _auto_play_effect_score(nested, enemy_attacking)
+			return nested_score * 0.75
+		"summon_heal":
+			return float(int(effect.get("amount", 0))) * 2.0
+		"summon_hp_damage":
+			return float(int(effect.get("base", 0)) + int(effect.get("per_hp", 1)) * 8) * 2.4
+	return 0.0
+
+func _resolve_reward_screen(app: Node) -> bool:
+	if app.reward_card_ids.is_empty():
+		app._skip_reward()
+	else:
+		app._take_reward_card(str(app.reward_card_ids[0]))
+	await process_frame
+	return true
+
+func _resolve_event_screen(app: Node) -> bool:
+	var node: Dictionary = app.run_state.get_current_node(app.database)
+	var event_id := str(node.get("event_id", "holostar-sponsor"))
+	var event_def: Dictionary = app.database.get_event(event_id)
+	var options: Array = event_def.get("options", [])
+	for option_variant in options:
+		var option: Dictionary = option_variant
+		if not app._event_option_available(option):
+			continue
+		if not _option_starts_battle(option):
+			var resolved: bool = app._resolve_event_option(option.duplicate(true))
+			await process_frame
+			return resolved
+	for option_variant in options:
+		var option: Dictionary = option_variant
+		if app._event_option_available(option):
+			var resolved: bool = app._resolve_event_option(option.duplicate(true))
+			await process_frame
+			return resolved
+	_fail("%s event 沒有可用選項：%s" % [str(app.run_state.character_id), event_id])
+	return false
+
+func _first_removable_card_index(app: Node) -> int:
+	for index in range(app.run_state.deck_ids.size()):
+		if not str(app.run_state.deck_ids[index]).ends_with("+"):
+			return index
+	return 0
+
+func _test_chapter_2_transition_auto_proxy() -> void:
+	var app = MainScene.instantiate()
+	root.add_child(app)
+	await process_frame
+
+	app.run_state.start_random_run(app.database, "botan", 2026051460)
+	app.run_state.hp = app.run_state.max_hp
+	app.run_state.gold = 180
+	app.run_state.deck_ids.clear()
+	for card_id in [
+		"botan-shot+", "botan-shot+", "botan-cover+", "botan-cover+",
+		"botan-funds-prepared+", "botan-heavy-shot+", "botan-counter-line+",
+		"botan-perfect-line+", "botan-overwatch+", "botan-piercing-round+"
+	]:
+		app.run_state.deck_ids.append(str(card_id))
+	app.show_boss_reward()
+	await process_frame
+	app._continue_after_boss_reward()
+	await process_frame
+	_expect_eq(str(app.current_screen), "chapter_start_event", "強化 auto proxy 應能從 Boss reward 進 Chapter start event")
+	await _resolve_chapter_start_event_screen(app)
+	_expect_eq(str(app.run_state.current_chapter_id), "chapter_2_algorithm_depths", "強化 auto proxy 應切到 Chapter 2")
+	_expect_eq(str(app.current_screen), "map", "強化 auto proxy 選完支援後應進 Chapter 2 map")
+
+	var log := {
+		"character_id": "botan_chapter_2_proxy",
+		"seed": 2026051460,
+		"final_screen": "",
+		"final_floor": 0,
+		"boss_id": _selected_boss_id(app),
+		"hp": 0,
+		"gold": 0,
+		"deck_count": 0,
+		"relic_count": 0,
+		"event_battle_count": 0,
+		"combat_count": 0,
+		"elite_count": 0,
+		"visited_node_count": 0,
+		"azki_actions_seen": [],
+		"result": "failed"
+	}
+	var steps := 0
+	while steps < 18 and str(app.current_screen) != "run_end":
+		steps += 1
+		_update_log_from_app(log, app)
+		if int(app.run_state.visited_node_ids.size()) >= 3:
+			log["result"] = "chapter_2_nodes_resolved"
+			break
+		var handled := await _advance_current_screen(app, log, 2026051460 + steps)
+		if not handled:
+			break
+	_update_log_from_app(log, app)
+	_expect_eq(str(log.get("result", "")), "chapter_2_nodes_resolved", "強化 auto proxy 應能處理至少 3 個 Chapter 2 節點")
+	_expect_true(int(log.get("combat_count", 0)) >= 1, "強化 auto proxy 應至少完成 1 場 Chapter 2 戰鬥")
+	app.queue_free()
+
+func _test_azki_forced_laplus_actions() -> void:
+	for action in ["laplus_dash", "laplus_crash"]:
+		var app = MainScene.instantiate()
+		root.add_child(app)
+		await process_frame
+
+		app.run_state.start_random_run(app.database, "azki", 2026051350)
+		var battle_node := _first_available_node_of_type(app, "battle")
+		if battle_node.is_empty():
+			_fail("AZKi forced action 無法找到普通戰節點")
+			app.queue_free()
+			continue
+		app.run_state.set_current_node(str(battle_node["id"]))
+		app.enter_current_node()
+		app.show_combat(action, "idle")
+		await process_frame
+
+		_expect_true(_find_child_by_name(app.screen_host, "AZKiBodySprite") != null, "%s 應顯示 AZKiBodySprite" % action)
+		_expect_true(_find_child_by_name(app.screen_host, "LaplusSummonSprite") != null, "%s 應顯示 LaplusSummonSprite" % action)
+		_expect_true(_find_child_by_name(app.screen_host, "PlayerActionFxSprite") != null, "%s 應顯示 PlayerActionFxSprite" % action)
+		_expect_true(_find_child_by_name(app.screen_host, "LaplusSummonHpLabel") != null, "%s 應顯示 LaplusSummonHpLabel" % action)
+		app.queue_free()
+
+func _test_azki_marker_fallback_proxy() -> void:
+	var app = MainScene.instantiate()
+	root.add_child(app)
+	await process_frame
+
+	app.run_state.start_random_run(app.database, "azki", 2026051351)
+	var battle_node := _first_available_node_of_type(app, "battle")
+	if battle_node.is_empty():
+		_fail("AZKi marker fallback 無法找到普通戰節點")
+		app.queue_free()
+		return
+	app.run_state.set_current_node(str(battle_node["id"]))
+	app.enter_current_node()
+	app.combat.enemy_statuses["marker"] = { "id": "marker", "value": 2, "duration": 1 }
+	app.show_combat()
+	await process_frame
+
+	_expect_true(_screen_text(app).contains("標記"), "AZKi marker fallback screen text 應包含繁中「標記」")
+	app.queue_free()
+
+func _test_boss_warning_proxy() -> void:
+	var boss := database.get_enemy("important-announcement")
+	var deck := database.resolve_cards(["subaru-guard"])
+	var state = combat_engine.start_combat(80, 80, deck, boss)
+	combat_engine.end_player_turn(state)
+	_expect_eq(state.turn_events.size(), 0, "Boss 非高傷下一意圖時不應提早推 warning")
+	combat_engine.end_player_turn(state)
+	_expect_true(state.turn_events.size() > 0, "Boss 高傷 intent 應產生 turn_events")
+	if state.turn_events.size() > 0:
+		_expect_eq(str(state.turn_events[0].get("id", "")), "boss-warning", "Boss warning event id 應存在於 turn_events")
+
+func _validate_run_log(log: Dictionary) -> void:
+	var character_id := str(log.get("character_id", ""))
+	var result := str(log.get("result", ""))
+	_expect_true(result in ["boss_reward_reached", "defeated"], "%s auto-run 應抵達 Boss reward 或死亡收束，實際：%s" % [character_id, result])
+	_expect_true(int(log.get("visited_node_count", 0)) >= 2 or result == "defeated", "%s auto-run 應至少完成多個節點或死亡收束" % character_id)
+	_expect_true(int(log.get("combat_count", 0)) >= 1, "%s auto-run 應至少完成一場戰鬥流程" % character_id)
+	_expect_true(str(log.get("final_screen", "")) in ["map", "reward", "boss_reward", "run_end"], "%s auto-run 不應停在 blocking screen：%s" % [character_id, str(log.get("final_screen", ""))])
+	if result == "defeated":
+		_expect_true(str(log.get("defeat_enemy_id", "")) != "", "%s auto-run 死亡時需記錄 defeat_enemy_id" % character_id)
+		_expect_true(int(log.get("defeat_floor", 0)) > 0, "%s auto-run 死亡時需記錄 defeat_floor" % character_id)
+		_expect_true(int(log.get("combat_start_hp", 0)) > 0, "%s auto-run 死亡時需記錄 combat_start_hp" % character_id)
+		_expect_true((log.get("combat_start_deck_ids", []) as Array).size() > 0, "%s auto-run 死亡時需記錄 combat_start_deck_ids" % character_id)
+		_expect_true(log.has("combat_start_relic_ids"), "%s auto-run 死亡時需記錄 combat_start_relic_ids" % character_id)
+
+func _update_log_from_app(log: Dictionary, app: Node) -> void:
+	var current_node: Dictionary = app.run_state.get_current_node(app.database)
+	log["final_screen"] = str(app.current_screen)
+	log["final_floor"] = int(current_node.get("floor", 0))
+	log["boss_id"] = _selected_boss_id(app)
+	log["hp"] = int(app.run_state.hp)
+	log["gold"] = int(app.run_state.gold)
+	log["deck_count"] = app.run_state.deck_ids.size()
+	log["relic_count"] = app.run_state.relic_ids.size()
+	log["visited_node_count"] = app.run_state.visited_node_ids.size()
+
+func _selected_boss_id(app: Node) -> String:
+	for node_variant in app.run_state.active_map.get("nodes", []):
+		var node: Dictionary = node_variant
+		if str(node.get("type", "")) == "boss":
+			return str(node.get("selected_boss_enemy_id", ""))
+	return ""
+
+func _first_available_node_of_type(app: Node, node_type: String) -> Dictionary:
+	for node_id in app.run_state.available_node_ids:
+		var node: Dictionary = app.run_state.get_node_by_id(str(node_id))
+		if str(node.get("type", "")) == node_type:
+			return node
+	return {}
+
+func _option_starts_battle(option: Dictionary) -> bool:
+	for outcome_variant in option.get("outcomes", []):
+		var outcome: Dictionary = outcome_variant
+		if str(outcome.get("action", "")) == "start_battle":
+			return true
+	return false
+
+func _is_curse_or_unplayable(card: Dictionary) -> bool:
+	return bool(card.get("unplayable", false)) or str(card.get("kind", "")) == "curse" or str(card.get("curse_hook", "")) != ""
+
+func _find_child_by_name(node: Node, target_name: String) -> Node:
+	if str(node.name).begins_with(target_name):
+		return node
+	for child in node.get_children():
+		var found := _find_child_by_name(child, target_name)
+		if found != null:
+			return found
+	return null
+
+func _screen_text(app: Node) -> String:
+	return _node_text(app.screen_host)
+
+func _node_text(node: Node) -> String:
+	var text := ""
+	for child in node.get_children():
+		if child is Label:
+			text += " " + str((child as Label).text)
+		elif child is Button:
+			text += " " + str((child as Button).text)
+		text += _node_text(child)
+	return text
+
+func _fail(message: String) -> void:
+	failures.append(message)
+
+func _expect_true(actual: bool, message: String) -> void:
+	if not actual:
+		failures.append("%s：expected true, got false" % message)
+
+func _expect_false(actual: bool, message: String) -> void:
+	if actual:
+		failures.append("%s：expected false, got true" % message)
+
+func _expect_eq(actual, expected, message: String) -> void:
+	if actual != expected:
+		failures.append("%s：expected %s, got %s" % [message, str(expected), str(actual)])

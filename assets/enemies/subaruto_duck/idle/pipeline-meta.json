@@ -1,0 +1,175 @@
+{
+  "target": "creature",
+  "mode": "idle",
+  "prompt": "Subaruto Duck boss idle 2x2 sprite sheet",
+  "role": "",
+  "input": "/Users/zhangzhipeng/.codex/generated_images/019e025b-92c7-7da1-87bf-2b9a8b076841/ig_082267b36a973d690169fd5e298f8c8191b2c5a2faa71b2269.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 180,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 128,
+  "fit_scale": 0.92,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "feet",
+  "shared_scale": true,
+  "component_mode": "largest",
+  "component_padding": 0,
+  "min_component_area": 1,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "idle-1",
+    "idle-2",
+    "idle-3",
+    "idle-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 57805,
+      "selected_component_bbox": [
+        208,
+        117,
+        463,
+        527
+      ],
+      "crop_bbox": [
+        208,
+        117,
+        463,
+        527
+      ],
+      "edge_touch": false,
+      "output_size": [
+        73,
+        117
+      ],
+      "paste_position": [
+        27,
+        6
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "component_mode": "largest",
+      "component_count": 2,
+      "selected_component_area": 58133,
+      "selected_component_bbox": [
+        178,
+        139,
+        428,
+        527
+      ],
+      "crop_bbox": [
+        178,
+        139,
+        428,
+        527
+      ],
+      "edge_touch": false,
+      "output_size": [
+        71,
+        111
+      ],
+      "paste_position": [
+        28,
+        12
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 60131,
+      "selected_component_bbox": [
+        201,
+        85,
+        456,
+        475
+      ],
+      "crop_bbox": [
+        201,
+        85,
+        456,
+        475
+      ],
+      "edge_touch": false,
+      "output_size": [
+        73,
+        112
+      ],
+      "paste_position": [
+        27,
+        11
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 54933,
+      "selected_component_bbox": [
+        178,
+        94,
+        418,
+        475
+      ],
+      "crop_bbox": [
+        178,
+        94,
+        418,
+        475
+      ],
+      "edge_touch": false,
+      "output_size": [
+        68,
+        109
+      ],
+      "paste_position": [
+        30,
+        14
+      ]
+    }
+  ],
+  "edge_touch_frames": []
+}

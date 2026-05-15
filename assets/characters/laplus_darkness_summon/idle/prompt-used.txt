@@ -1,0 +1,12 @@
+生成 Godot 用 2D 召喚物動畫 sprite sheet。
+
+主體：只有 Laplus，作為 AZKi 的小型召喚物 / 使魔。不要出現 AZKi，不要出現任何人類施法者，也不要出現第二個角色。
+畫布 / 排版：精確 3x3 grid，共 9 格，每格尺寸一致。背景必須是 100% 純色 #FF00FF chroma-key。不要格線、邊框、編號、標籤。
+
+風格：精緻 anime chibi fantasy battle sprite，clean HD game asset，小尺寸顯示時仍要清楚可讀。
+
+每格安全規則：每一格都必須完整保留 Laplus 全身。Laplus 必須待在每格中央 60-70% 安全區內，四周保留足夠 #FF00FF padding。召喚物比例一致、身高一致、身體底部錨點穩定，不可裁切，不可讓任何身體部位碰到或穿越格子邊界。
+
+動作：Laplus 作為小型召喚物待機，輕微呼吸、眨眼或漂浮感，身體完整穩定。
+
+嚴格禁止：不要出現 AZKi、第二個角色、鎖鏈、leash、tether、繩索、束縛線、projectile、impact burst、長 trail 或分離式 FX。不要為了容納動作或特效而讓 Laplus 位移、縮小、重新置中。不要出現被切開、重複、錯位的身體部位。不要在 sheet 上方、下方或格子邊緣出現任何召喚物碎片。不要陰影、地板、漸層背景。不要文字或對話框。

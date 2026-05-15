@@ -1,0 +1,373 @@
+{
+  "target": "player",
+  "mode": "hurt",
+  "prompt": "",
+  "role": "",
+  "input": "generated/sprites/botan-hit-3x3-v1/raw-sheet.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 90,
+  "rows": 3,
+  "cols": 3,
+  "cell_size": 256,
+  "fit_scale": 0.92,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "bottom",
+  "shared_scale": true,
+  "component_mode": "largest",
+  "component_padding": 8,
+  "min_component_area": 80,
+  "edge_touch_margin": 2,
+  "frame_labels": [
+    "frame-1",
+    "frame-2",
+    "frame-3",
+    "frame-4",
+    "frame-5",
+    "frame-6",
+    "frame-7",
+    "frame-8",
+    "frame-9"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        418,
+        418
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 56756,
+      "selected_component_bbox": [
+        93,
+        80,
+        386,
+        408
+      ],
+      "crop_bbox": [
+        85,
+        72,
+        394,
+        410
+      ],
+      "edge_touch": false,
+      "output_size": [
+        204,
+        223
+      ],
+      "paste_position": [
+        26,
+        23
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        418,
+        0,
+        836,
+        418
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 51240,
+      "selected_component_bbox": [
+        52,
+        91,
+        308,
+        410
+      ],
+      "crop_bbox": [
+        44,
+        83,
+        316,
+        410
+      ],
+      "edge_touch": false,
+      "output_size": [
+        179,
+        216
+      ],
+      "paste_position": [
+        38,
+        30
+      ]
+    },
+    {
+      "grid": [
+        0,
+        2
+      ],
+      "source_box": [
+        836,
+        0,
+        1254,
+        418
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 51089,
+      "selected_component_bbox": [
+        5,
+        84,
+        252,
+        410
+      ],
+      "crop_bbox": [
+        0,
+        76,
+        260,
+        410
+      ],
+      "edge_touch": true,
+      "output_size": [
+        172,
+        220
+      ],
+      "paste_position": [
+        42,
+        26
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        418,
+        418,
+        836
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 51194,
+      "selected_component_bbox": [
+        87,
+        66,
+        347,
+        378
+      ],
+      "crop_bbox": [
+        79,
+        58,
+        355,
+        386
+      ],
+      "edge_touch": false,
+      "output_size": [
+        182,
+        216
+      ],
+      "paste_position": [
+        37,
+        30
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        418,
+        418,
+        836,
+        836
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 50114,
+      "selected_component_bbox": [
+        41,
+        68,
+        301,
+        380
+      ],
+      "crop_bbox": [
+        33,
+        60,
+        309,
+        388
+      ],
+      "edge_touch": false,
+      "output_size": [
+        182,
+        216
+      ],
+      "paste_position": [
+        37,
+        30
+      ]
+    },
+    {
+      "grid": [
+        1,
+        2
+      ],
+      "source_box": [
+        836,
+        418,
+        1254,
+        836
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 51597,
+      "selected_component_bbox": [
+        4,
+        51,
+        250,
+        380
+      ],
+      "crop_bbox": [
+        0,
+        43,
+        258,
+        388
+      ],
+      "edge_touch": true,
+      "output_size": [
+        170,
+        228
+      ],
+      "paste_position": [
+        43,
+        18
+      ]
+    },
+    {
+      "grid": [
+        2,
+        0
+      ],
+      "source_box": [
+        0,
+        836,
+        418,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 51582,
+      "selected_component_bbox": [
+        80,
+        12,
+        321,
+        350
+      ],
+      "crop_bbox": [
+        72,
+        4,
+        329,
+        358
+      ],
+      "edge_touch": false,
+      "output_size": [
+        170,
+        234
+      ],
+      "paste_position": [
+        43,
+        12
+      ]
+    },
+    {
+      "grid": [
+        2,
+        1
+      ],
+      "source_box": [
+        418,
+        836,
+        836,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 51279,
+      "selected_component_bbox": [
+        40,
+        15,
+        280,
+        354
+      ],
+      "crop_bbox": [
+        32,
+        7,
+        288,
+        362
+      ],
+      "edge_touch": false,
+      "output_size": [
+        169,
+        234
+      ],
+      "paste_position": [
+        43,
+        12
+      ]
+    },
+    {
+      "grid": [
+        2,
+        2
+      ],
+      "source_box": [
+        836,
+        836,
+        1254,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 51277,
+      "selected_component_bbox": [
+        6,
+        15,
+        246,
+        355
+      ],
+      "crop_bbox": [
+        0,
+        7,
+        254,
+        363
+      ],
+      "edge_touch": true,
+      "output_size": [
+        168,
+        235
+      ],
+      "paste_position": [
+        44,
+        11
+      ]
+    }
+  ],
+  "edge_touch_frames": [
+    [
+      0,
+      2
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      2,
+      2
+    ]
+  ]
+}

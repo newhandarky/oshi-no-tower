@@ -1,0 +1,316 @@
+{
+  "target": "asset",
+  "mode": "projectile",
+  "prompt": "",
+  "role": "",
+  "input": "generated/sprites/azki-laplus-necrobinder-pair-v1/raw/fx-kiss-heart-projectile-raw.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 90,
+  "rows": 3,
+  "cols": 3,
+  "cell_size": 256,
+  "fit_scale": 0.86,
+  "trim_border": 8,
+  "edge_clean_depth": 8,
+  "align": "center",
+  "shared_scale": true,
+  "component_mode": "all",
+  "component_padding": 8,
+  "min_component_area": 32,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "fx_kiss_heart_projectile-1",
+    "fx_kiss_heart_projectile-2",
+    "fx_kiss_heart_projectile-3",
+    "fx_kiss_heart_projectile-4",
+    "fx_kiss_heart_projectile-5",
+    "fx_kiss_heart_projectile-6",
+    "fx_kiss_heart_projectile-7",
+    "fx_kiss_heart_projectile-8",
+    "fx_kiss_heart_projectile-9"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        418,
+        418
+      ],
+      "component_mode": "all",
+      "component_count": 6,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        80,
+        155,
+        191,
+        232
+      ],
+      "edge_touch": false,
+      "output_size": [
+        65,
+        45
+      ],
+      "paste_position": [
+        95,
+        105
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        418,
+        0,
+        836,
+        418
+      ],
+      "component_mode": "all",
+      "component_count": 4,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        50,
+        167,
+        272,
+        237
+      ],
+      "edge_touch": false,
+      "output_size": [
+        130,
+        41
+      ],
+      "paste_position": [
+        63,
+        107
+      ]
+    },
+    {
+      "grid": [
+        0,
+        2
+      ],
+      "source_box": [
+        836,
+        0,
+        1254,
+        418
+      ],
+      "component_mode": "all",
+      "component_count": 12,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        32,
+        127,
+        360,
+        255
+      ],
+      "edge_touch": false,
+      "output_size": [
+        193,
+        75
+      ],
+      "paste_position": [
+        31,
+        90
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        418,
+        418,
+        836
+      ],
+      "component_mode": "all",
+      "component_count": 17,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        30,
+        119,
+        362,
+        263
+      ],
+      "edge_touch": false,
+      "output_size": [
+        195,
+        84
+      ],
+      "paste_position": [
+        30,
+        86
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        418,
+        418,
+        836,
+        836
+      ],
+      "component_mode": "all",
+      "component_count": 31,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        20,
+        107,
+        394,
+        267
+      ],
+      "edge_touch": false,
+      "output_size": [
+        220,
+        94
+      ],
+      "paste_position": [
+        18,
+        81
+      ]
+    },
+    {
+      "grid": [
+        1,
+        2
+      ],
+      "source_box": [
+        836,
+        418,
+        1254,
+        836
+      ],
+      "component_mode": "all",
+      "component_count": 21,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        24,
+        97,
+        396,
+        290
+      ],
+      "edge_touch": false,
+      "output_size": [
+        218,
+        113
+      ],
+      "paste_position": [
+        19,
+        71
+      ]
+    },
+    {
+      "grid": [
+        2,
+        0
+      ],
+      "source_box": [
+        0,
+        836,
+        418,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 16,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        49,
+        130,
+        381,
+        266
+      ],
+      "edge_touch": false,
+      "output_size": [
+        195,
+        80
+      ],
+      "paste_position": [
+        30,
+        88
+      ]
+    },
+    {
+      "grid": [
+        2,
+        1
+      ],
+      "source_box": [
+        418,
+        836,
+        836,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 11,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        47,
+        111,
+        387,
+        271
+      ],
+      "edge_touch": false,
+      "output_size": [
+        200,
+        94
+      ],
+      "paste_position": [
+        28,
+        81
+      ]
+    },
+    {
+      "grid": [
+        2,
+        2
+      ],
+      "source_box": [
+        836,
+        836,
+        1254,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 4,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        39,
+        118,
+        357,
+        284
+      ],
+      "edge_touch": false,
+      "output_size": [
+        187,
+        97
+      ],
+      "paste_position": [
+        34,
+        79
+      ]
+    }
+  ],
+  "edge_touch_frames": [],
+  "post_clean_guide_line_pixels_removed": 0
+}

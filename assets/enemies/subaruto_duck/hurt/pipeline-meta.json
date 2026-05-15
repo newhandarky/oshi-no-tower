@@ -1,0 +1,175 @@
+{
+  "target": "creature",
+  "mode": "hurt",
+  "prompt": "Subaruto Duck boss hurt 2x2 sprite sheet",
+  "role": "",
+  "input": "/Users/zhangzhipeng/.codex/generated_images/019e025b-92c7-7da1-87bf-2b9a8b076841/ig_082267b36a973d690169fd5f00ac708191822ae19705904b6c.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 180,
+  "rows": 2,
+  "cols": 2,
+  "cell_size": 128,
+  "fit_scale": 0.92,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "feet",
+  "shared_scale": true,
+  "component_mode": "largest",
+  "component_padding": 0,
+  "min_component_area": 1,
+  "edge_touch_margin": 0,
+  "frame_labels": [
+    "hurt-1",
+    "hurt-2",
+    "hurt-3",
+    "hurt-4"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        627,
+        627
+      ],
+      "component_mode": "largest",
+      "component_count": 3,
+      "selected_component_area": 56824,
+      "selected_component_bbox": [
+        209,
+        129,
+        462,
+        527
+      ],
+      "crop_bbox": [
+        209,
+        129,
+        462,
+        527
+      ],
+      "edge_touch": false,
+      "output_size": [
+        74,
+        117
+      ],
+      "paste_position": [
+        27,
+        6
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        627,
+        0,
+        1254,
+        627
+      ],
+      "component_mode": "largest",
+      "component_count": 8,
+      "selected_component_area": 55439,
+      "selected_component_bbox": [
+        165,
+        148,
+        434,
+        526
+      ],
+      "crop_bbox": [
+        165,
+        148,
+        434,
+        526
+      ],
+      "edge_touch": false,
+      "output_size": [
+        79,
+        111
+      ],
+      "paste_position": [
+        24,
+        12
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        627,
+        627,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 8,
+      "selected_component_area": 57878,
+      "selected_component_bbox": [
+        179,
+        86,
+        477,
+        474
+      ],
+      "crop_bbox": [
+        179,
+        86,
+        477,
+        474
+      ],
+      "edge_touch": false,
+      "output_size": [
+        88,
+        114
+      ],
+      "paste_position": [
+        20,
+        9
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        627,
+        627,
+        1254,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 5,
+      "selected_component_area": 53937,
+      "selected_component_bbox": [
+        167,
+        99,
+        401,
+        474
+      ],
+      "crop_bbox": [
+        167,
+        99,
+        401,
+        474
+      ],
+      "edge_touch": false,
+      "output_size": [
+        69,
+        110
+      ],
+      "paste_position": [
+        29,
+        13
+      ]
+    }
+  ],
+  "edge_touch_frames": []
+}

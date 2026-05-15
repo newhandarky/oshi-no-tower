@@ -1,0 +1,315 @@
+{
+  "target": "asset",
+  "mode": "sheet",
+  "prompt": "",
+  "role": "",
+  "input": "/Users/zhangzhipeng/MyProject/oshi-no-tower-godot/generated/sprites/kedama-idle-3x3-v1/raw-source.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 120,
+  "rows": 3,
+  "cols": 3,
+  "cell_size": 256,
+  "fit_scale": 0.82,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "feet",
+  "shared_scale": true,
+  "component_mode": "all",
+  "component_padding": 0,
+  "min_component_area": 1,
+  "edge_touch_margin": 2,
+  "frame_labels": [
+    "frame-1",
+    "frame-2",
+    "frame-3",
+    "frame-4",
+    "frame-5",
+    "frame-6",
+    "frame-7",
+    "frame-8",
+    "frame-9"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        418,
+        418
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        88,
+        76,
+        373,
+        370
+      ],
+      "edge_touch": false,
+      "output_size": [
+        194,
+        200
+      ],
+      "paste_position": [
+        31,
+        33
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        418,
+        0,
+        836,
+        418
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        61,
+        77,
+        348,
+        370
+      ],
+      "edge_touch": false,
+      "output_size": [
+        195,
+        199
+      ],
+      "paste_position": [
+        30,
+        34
+      ]
+    },
+    {
+      "grid": [
+        0,
+        2
+      ],
+      "source_box": [
+        836,
+        0,
+        1254,
+        418
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        39,
+        79,
+        325,
+        370
+      ],
+      "edge_touch": false,
+      "output_size": [
+        194,
+        198
+      ],
+      "paste_position": [
+        31,
+        35
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        418,
+        418,
+        836
+      ],
+      "component_mode": "all",
+      "component_count": 10,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        75,
+        60,
+        370,
+        334
+      ],
+      "edge_touch": false,
+      "output_size": [
+        201,
+        186
+      ],
+      "paste_position": [
+        27,
+        47
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        418,
+        418,
+        836,
+        836
+      ],
+      "component_mode": "all",
+      "component_count": 7,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        43,
+        61,
+        351,
+        335
+      ],
+      "edge_touch": false,
+      "output_size": [
+        209,
+        186
+      ],
+      "paste_position": [
+        23,
+        47
+      ]
+    },
+    {
+      "grid": [
+        1,
+        2
+      ],
+      "source_box": [
+        836,
+        418,
+        1254,
+        836
+      ],
+      "component_mode": "all",
+      "component_count": 6,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        29,
+        63,
+        332,
+        335
+      ],
+      "edge_touch": false,
+      "output_size": [
+        206,
+        185
+      ],
+      "paste_position": [
+        25,
+        48
+      ]
+    },
+    {
+      "grid": [
+        2,
+        0
+      ],
+      "source_box": [
+        0,
+        836,
+        418,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        73,
+        17,
+        367,
+        316
+      ],
+      "edge_touch": false,
+      "output_size": [
+        200,
+        203
+      ],
+      "paste_position": [
+        28,
+        30
+      ]
+    },
+    {
+      "grid": [
+        2,
+        1
+      ],
+      "source_box": [
+        418,
+        836,
+        836,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        50,
+        28,
+        343,
+        317
+      ],
+      "edge_touch": false,
+      "output_size": [
+        199,
+        196
+      ],
+      "paste_position": [
+        28,
+        37
+      ]
+    },
+    {
+      "grid": [
+        2,
+        2
+      ],
+      "source_box": [
+        836,
+        836,
+        1254,
+        1254
+      ],
+      "component_mode": "all",
+      "component_count": 1,
+      "selected_component_area": null,
+      "selected_component_bbox": null,
+      "crop_bbox": [
+        30,
+        27,
+        312,
+        317
+      ],
+      "edge_touch": false,
+      "output_size": [
+        192,
+        197
+      ],
+      "paste_position": [
+        32,
+        36
+      ]
+    }
+  ],
+  "edge_touch_frames": []
+}

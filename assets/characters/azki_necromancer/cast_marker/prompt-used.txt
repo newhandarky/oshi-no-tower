@@ -1,0 +1,12 @@
+生成 Godot 用 2D 角色動畫 sprite sheet。
+
+主體：只有 AZKi。不要出現 Laplus，不要出現第二個角色。
+畫布 / 排版：精確 3x3 grid，共 9 格，每格尺寸一致。背景必須是 100% 純色 #FF00FF chroma-key。不要格線、邊框、編號、標籤。
+
+風格：精緻 anime chibi fantasy battle sprite，clean HD game asset，小尺寸顯示時仍要清楚可讀。
+
+每格安全規則：每一格都必須完整保留 AZKi 全身。AZKi 必須待在每格中央 60-70% 安全區內，四周保留足夠 #FF00FF padding。角色比例一致、身高一致、腳底 / 身體底部錨點穩定，不可裁切，不可讓任何身體部位碰到或穿越格子邊界。
+
+動作：AZKi 原地施放標記魔法，手勢從準備、聚焦到釋放，但不要生成投射物或命中效果。
+
+嚴格禁止：不要出現 Laplus、第二個角色、鎖鏈、leash、tether、繩索、束縛線、projectile、impact burst、長 trail 或分離式 FX。不要為了容納動作或特效而讓 AZKi 位移、縮小、重新置中。不要出現被切開、重複、錯位的身體部位。不要在 sheet 上方、下方或格子邊緣出現任何角色碎片。不要陰影、地板、漸層背景。除 kiss_attack 指定外，不要文字或對話框。

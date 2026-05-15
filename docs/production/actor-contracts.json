@@ -1,0 +1,287 @@
+{
+  "_language_policy": {
+    "human_language": "Traditional Chinese for descriptions, notes, reports, and user-facing narrative text",
+    "technical_language": "English for technical terms, skill names, JSON keys, event ids, asset ids, file paths, and engine/runtime names"
+  },
+  "source": {
+    "game_design": "GAME_DESIGN.md",
+    "game_design_bible": "game_design_bible.json"
+  },
+  "actors": [
+    {
+      "actor_id": "subaru",
+      "actor_type": "protagonist",
+      "scope": "MVP performance pack",
+      "story_contract": {
+        "chapter_id": "mvp_single_act_tower",
+        "role_in_script": "低費連段與節奏守備的 playable protagonist",
+        "personality_tags": [
+          "元氣",
+          "節奏",
+          "吐槽",
+          "社團感"
+        ],
+        "dialogue_voice_rules": [
+          "戰鬥提示要強調先用低費牌起手",
+          "不使用嚴肅黑暗語氣"
+        ]
+      },
+      "visual_contract": {
+        "resource_base_path": "res://assets/characters/subaru/",
+        "identity_locks": [
+          "duck / tempo / tsukkomi identity",
+          "low-cost chain readability",
+          "feet alignment stable across states"
+        ],
+        "forbidden_drift": [
+          "不要把 Subaru 做成 Botan 式高單發狙擊角色"
+        ]
+      },
+      "performance_contract": {
+        "states": [
+          "idle",
+          "normal_attack",
+          "tsukkomi",
+          "defense",
+          "hurt"
+        ],
+        "actions": [
+          {
+            "animation_id": "normal_attack",
+            "meaning": "低費攻擊與連段起手"
+          },
+          {
+            "animation_id": "tsukkomi",
+            "meaning": "中費多段爆發或特色吐槽"
+          },
+          {
+            "animation_id": "defense",
+            "meaning": "節奏守備與 block"
+          }
+        ]
+      },
+      "event_feedback_contract": {
+        "sfx_events": [
+          "card_play_generic"
+        ],
+        "music_context_hooks": [
+          "music_context_combat"
+        ],
+        "silent_intentional": []
+      },
+      "validation_contract": {
+        "visual_anchor_audit": "manual QA if new art is introduced",
+        "fx_overlap_audit": "Subaru attacks must not cover hand cards or status labels",
+        "broken_frame_audit": "existing runtime tests plus manual combat preview"
+      }
+    },
+    {
+      "actor_id": "botan",
+      "actor_type": "protagonist",
+      "scope": "MVP performance pack",
+      "story_contract": {
+        "chapter_id": "mvp_single_act_tower",
+        "role_in_script": "2 費爆發與穩定防線的 playable protagonist",
+        "personality_tags": [
+          "冷靜",
+          "精準",
+          "射擊",
+          "穩定"
+        ],
+        "dialogue_voice_rules": [
+          "戰鬥提示要強調控場後打 2 費攻擊",
+          "不要變成 Subaru 式抽牌連段角色"
+        ]
+      },
+      "visual_contract": {
+        "resource_base_path": "res://assets/characters/botan/",
+        "identity_locks": [
+          "pistol / sniper / precision silhouette",
+          "sniper_ultimate must read as heavier than pistol_attack",
+          "defense pose keeps face readable"
+        ],
+        "forbidden_drift": [
+          "不要讓低費連動壓過 2 費爆發定位"
+        ]
+      },
+      "performance_contract": {
+        "states": [
+          "idle",
+          "pistol_attack",
+          "sniper_ultimate",
+          "defense",
+          "hurt"
+        ],
+        "actions": [
+          {
+            "animation_id": "pistol_attack",
+            "meaning": "低中費射擊"
+          },
+          {
+            "animation_id": "sniper_ultimate",
+            "meaning": "2 費爆發、重擊、收頭"
+          },
+          {
+            "animation_id": "defense",
+            "meaning": "掩體與穩定防線"
+          }
+        ]
+      },
+      "event_feedback_contract": {
+        "sfx_events": [
+          "card_play_generic"
+        ],
+        "music_context_hooks": [
+          "music_context_combat"
+        ],
+        "silent_intentional": []
+      },
+      "validation_contract": {
+        "visual_anchor_audit": "manual QA if new art is introduced",
+        "fx_overlap_audit": "Sniper FX must not cover Boss warning or player status",
+        "broken_frame_audit": "existing runtime tests plus manual combat preview"
+      }
+    },
+    {
+      "actor_id": "azki",
+      "actor_type": "protagonist",
+      "scope": "full battle readability pack",
+      "story_contract": {
+        "chapter_id": "mvp_single_act_tower",
+        "role_in_script": "標記、追擊與 Laplus summon 協作的 playable protagonist",
+        "personality_tags": [
+          "開拓",
+          "座標",
+          "標記",
+          "追擊"
+        ],
+        "dialogue_voice_rules": [
+          "戰鬥提示要說明先上標記再把標記轉成節奏",
+          "Laplus 是 companion summon，不是敵人"
+        ]
+      },
+      "visual_contract": {
+        "resource_base_path": "res://assets/characters/azki_necromancer/",
+        "identity_locks": [
+          "AZKi body is separate from Laplus summon",
+          "No visible chain / leash / tether",
+          "Marker and kiss attacks must have distinct projectile reading"
+        ],
+        "forbidden_drift": [
+          "不要回到 pair body sheet 作為正式 runtime 顯示",
+          "不要讓 FX 擋住 AZKi face、Laplus HP label、Boss warning 或手牌文字"
+        ]
+      },
+      "performance_contract": {
+        "states": [
+          "idle",
+          "defense",
+          "hurt",
+          "defeat",
+          "map_marker_attack",
+          "kiss_attack",
+          "command_dash",
+          "command_crash"
+        ],
+        "actions": [
+          {
+            "animation_id": "map_marker_attack",
+            "meaning": "上標記 / 座標投射",
+            "fx_id": "map_marker_projectile"
+          },
+          {
+            "animation_id": "kiss_attack",
+            "meaning": "標記 payoff / 飛吻攻擊",
+            "fx_id": "kiss_heart_projectile"
+          },
+          {
+            "animation_id": "laplus_dash",
+            "meaning": "AZKi command_dash + Laplus dash_attack + dash trail",
+            "fx_id": "laplus_dash_trail"
+          },
+          {
+            "animation_id": "laplus_crash",
+            "meaning": "AZKi command_crash + Laplus crash_attack + crash impact",
+            "fx_id": "laplus_crash_impact"
+          }
+        ]
+      },
+      "event_feedback_contract": {
+        "fx_events": [
+          "status_marker_applied",
+          "marker_payoff_damage",
+          "azki_laplus_dash",
+          "azki_laplus_crash"
+        ],
+        "sfx_events": [
+          "marker_apply_ping",
+          "marker_payoff_hit",
+          "laplus_dash_whoosh",
+          "laplus_crash_impact"
+        ],
+        "music_context_hooks": [
+          "music_context_combat"
+        ]
+      },
+      "validation_contract": {
+        "visual_anchor_audit": "required if FX anchor or size changes",
+        "fx_overlap_audit": "FX must extend from Laplus right side toward enemy and avoid runtime text",
+        "broken_frame_audit": "16 formal AZKi/Laplus body sheets currently edge_touch_frames=[]; keep this gate for future replacement"
+      }
+    },
+    {
+      "actor_id": "laplus",
+      "actor_type": "companion",
+      "scope": "companion battle pack",
+      "story_contract": {
+        "chapter_id": "mvp_single_act_tower",
+        "role_in_script": "AZKi 的 battle companion summon，提供承傷、dash、crash 表演",
+        "personality_tags": [
+          "召喚獸",
+          "衝刺",
+          "墜擊",
+          "承傷"
+        ],
+        "required_story_events": [
+          "azki_laplus_dash",
+          "azki_laplus_crash"
+        ]
+      },
+      "visual_contract": {
+        "resource_base_path": "res://assets/characters/laplus_darkness_summon/",
+        "identity_locks": [
+          "Laplus is only spawned for AZKi combat",
+          "HP label stays readable above summon",
+          "No chain / leash / tether"
+        ],
+        "forbidden_drift": [
+          "不要讓 Laplus 與 AZKi 混成同一張 body sheet"
+        ]
+      },
+      "performance_contract": {
+        "states": [
+          "idle",
+          "defense",
+          "hurt",
+          "defeat",
+          "dash_attack",
+          "crash_attack"
+        ],
+        "actions": [
+          {
+            "animation_id": "dash_attack",
+            "meaning": "Laplus dash attack"
+          },
+          {
+            "animation_id": "crash_attack",
+            "meaning": "Laplus crash impact attack"
+          }
+        ]
+      },
+      "validation_contract": {
+        "runtime_hp_gate": "initial HP 10, intercepts unblocked damage, revives at 1 HP on new player turn if defeated",
+        "fx_overlap_audit": "Laplus HP label must not be obscured by dash/crash FX"
+      }
+    }
+  ]
+}

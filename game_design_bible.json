@@ -1,0 +1,529 @@
+{
+  "_language_policy": {
+    "human_language": "Traditional Chinese for descriptions, notes, reports, and user-facing narrative text",
+    "technical_language": "English for technical terms, skill names, JSON keys, event ids, asset ids, file paths, and engine/runtime names"
+  },
+  "project": {
+    "id": "oshi-no-tower-godot",
+    "title": "Oshi no Tower Godot MVP",
+    "genre": "deckbuilding roguelite playable demo",
+    "engine": "Godot 4.6",
+    "target_platform": "desktop",
+    "production_scope": "godot_mvp_playable_demo",
+    "main_scene": "res://scenes/main.tscn"
+  },
+  "creative_bible": {
+    "premise": "Hololive 粉絲向推塔 roguelite，玩家用角色牌組處理直播事故、謎因敵人、資源取捨與 Boss 壓力。",
+    "tone": "輕量、粉絲向、直播事故喜劇感，保留戰鬥與路線決策壓力。",
+    "player_fantasy": "用推角特色牌組突破 16 floor 隨機塔，掌握 Boss 名稱與戰鬥 warning，把角色節奏打出來。",
+    "core_loop": "選角 -> 生成 Chapter 1 16 floor random map -> 走節點取得卡牌/relic/事件代價 -> Boss 戰 -> Boss reward -> Chapter start event -> Chapter 2 random map -> Chapter 2 Boss reward 或 run summary",
+    "forbidden_drift": [
+      "新增第四位 playable",
+      "未經 source-of-truth 直接新增章節 runtime",
+      "把 deferred audio/art 假裝完成",
+      "讓下游 skill 自行改寫角色定位",
+      "將謎因事件描述成真實人物負面衝突"
+    ]
+  },
+  "demo_priority": [
+    "chapter_2_runtime_prototype",
+    "build_variety_inside_single_act",
+    "azki_laplus_marker_frequency",
+    "three_character_full_run_qa",
+    "boss_warning_readability",
+    "small_balance_ui_polish"
+  ],
+  "deferred": [
+    "chapter_2_final_art_and_balance",
+    "new_character",
+    "web_build",
+    "full_audio_asset_generation"
+  ],
+  "chapters": [
+    {
+      "chapter_id": "mvp_single_act_tower",
+      "title": "MVP 單 Act 推塔",
+      "floor_count": 16,
+      "route_model": "seed_based_random_map",
+      "boss_floor": 16,
+      "boss_policy": "random_boss_selected_on_map_generation_and_reused_in_boss_battle",
+      "node_types": [
+        "battle",
+        "elite",
+        "event",
+        "chest",
+        "shop",
+        "campfire",
+        "boss"
+      ]
+    },
+    {
+      "chapter_id": "chapter_2_algorithm_depths",
+      "title": "演算法深層",
+      "status": "runtime_prototype",
+      "floor_count": 16,
+      "route_model": "seed_based_random_map_v2",
+      "boss_floor": 16,
+      "entry_policy": "after_chapter_1_boss_reward_show_chapter_start_event_then_generate_chapter_2_map",
+      "chapter_start_event_id": "chapter-2-support-desk",
+      "boss_contracts": [
+        "algorithm-core",
+        "archive-phantom",
+        "notification-storm"
+      ],
+      "runtime_status": "implemented_prototype",
+      "design_documents": [
+        "docs/production/chapter-2-design-bible.md",
+        "docs/production/chapter-transition-spec.md",
+        "docs/production/chapter-start-event-pool.md",
+        "docs/production/chapter-2-encounter-design.md",
+        "docs/production/chapter-2-boss-contracts.md"
+      ],
+      "node_types": [
+        "battle",
+        "elite",
+        "event",
+        "chest",
+        "shop",
+        "campfire",
+        "boss"
+      ]
+    }
+  ],
+  "content_expansion": {
+    "current_pack_id": "chapter_2_runtime_prototype",
+    "scope": "connect_chapter_2_start_event_random_map_enemy_event_and_boss_pools_without_new_visual_assets",
+    "priorities": [
+      "chapter_2_transition_spec",
+      "chapter_start_event_pool",
+      "chapter_2_enemy_question_design",
+      "chapter_2_boss_contracts",
+      "subaru_cheap_chain_and_draw_payoff",
+      "botan_two_cost_setup_and_burst_payoff",
+      "azki_marker_and_laplus_reward_frequency",
+      "relic_hooks_that_support_build_identity",
+      "reward_draft_signal_based_choices",
+      "enemy_question_design"
+    ],
+    "implemented_changes": [
+      "subaru_duck_tempo_changed_to_zero_cost_cycle_payoff",
+      "subaru_blue_wave_adds_energy_to_support_cycle_turns",
+      "botan_mark_now_applies_vulnerable_as_setup",
+      "botan_funds_prepared_now_draws_and_extends_vulnerable",
+      "azki_laplus_dash_now_applies_marker",
+      "azki_laplus_crash_now_draws_if_marker_is_present",
+      "new_azki_cards_added_to_reward_and_shop_pools",
+      "relic_engine_supports_multi_effects_and first_cheap_card_played / first_marker_card_played hooks",
+      "subaru_cheer_loop_adds_block_to_draw_cycle",
+      "subaru_hype_call_now_draws_while_granting_strength",
+      "botan_steady_aim_adds_short_vulnerable_setup",
+      "botan_counter_line_blocks_more_and_draws_against_vulnerable_enemies",
+      "azki_marker_echo_and_laplus_reposition_added_to_reward_and_shop_pools",
+      "duck_whistle_now_draws_and_blocks_on_first_cheap_card",
+      "unarchived_archive_now_draws_and_grants_energy_on_first_marker_card",
+      "turn_start_relics_healing_chat_and_pamomi_signal_now_heal_at_runtime",
+      "card_depth_metadata_added_to_cards_relics_and_enemies",
+      "combat_engine_supports_conditional_retain_exhaust_on_play_summon_heal_and_cards_played_this_turn",
+      "upgrade_v2_uses_card_specific_upgrade_effects_when_defined",
+      "reward_draft_v2_picks_build_relevant_survival_bridge_and_wildcard_cards",
+      "shop_cards_are_sorted_by_build_relevance_survival_and_wildcard_value",
+      "content_pack_2a_adds_four_prototype_cards_per_existing_character",
+      "enemy_question_pack_adds_anti_burst_attack_intent_debuff_and_scaling_clock_encounters",
+      "chapter_2_foundation_documents_added_without_runtime_changes",
+      "chapter_start_event_defined_as_character_neutral_no_azki_specific_compensation",
+      "run_state_tracks_current_chapter_id",
+      "chapter_1_boss_reward_routes_to_chapter_start_event_before_chapter_2_map",
+      "chapter_2_random_map_uses_chapter_2_enemy_event_and_boss_pools",
+      "chapter_2_support_desk_drafts_three_character_neutral_options",
+      "chapter_2_runtime_tests_added_for_transition_data_and_map_pools",
+      "azki_chapter_2_reward_and_shop_scoring_prioritizes_marker_laplus_guard_and_payoff_consistency",
+      "chapter_2_balance_pass_one_caps_early_mid_common_enemy_pressure"
+    ]
+  },
+  "playable_actors": [
+    "subaru",
+    "botan",
+    "azki"
+  ],
+  "actors": [
+    {
+      "actor_id": "subaru",
+      "display_name": "大空昴",
+      "actor_type": "protagonist",
+      "owner_skill": "game-actor-pipeline",
+      "identity_focus_tags": [
+        "cheap_chain",
+        "tempo_block",
+        "multi_hit_strength"
+      ],
+      "signature_card_ids": [
+        "subaru-duck-tempo",
+        "subaru-new-oshi-call"
+      ],
+      "performance_contract": {
+        "resource_base_path": "res://assets/characters/subaru/",
+        "required_states": [
+          "idle",
+          "normal_attack",
+          "tsukkomi",
+          "defense",
+          "hurt"
+        ],
+        "runtime_rule": "cost 1 damage cards use normal_attack; cost 2 damage cards use tsukkomi where mapped"
+      }
+    },
+    {
+      "actor_id": "botan",
+      "display_name": "獅白牡丹",
+      "actor_type": "protagonist",
+      "owner_skill": "game-actor-pipeline",
+      "identity_focus_tags": [
+        "two_cost_burst",
+        "precision_control",
+        "fortress_counter"
+      ],
+      "signature_card_ids": [
+        "botan-heavy-shot",
+        "botan-funds-prepared"
+      ],
+      "performance_contract": {
+        "resource_base_path": "res://assets/characters/botan/",
+        "required_states": [
+          "idle",
+          "pistol_attack",
+          "sniper_ultimate",
+          "defense",
+          "hurt"
+        ],
+        "runtime_rule": "2 cost attack payoff should visibly read as sniper_ultimate / precision burst"
+      }
+    },
+    {
+      "actor_id": "azki",
+      "display_name": "AZKi",
+      "actor_type": "protagonist",
+      "owner_skill": "game-actor-pipeline",
+      "identity_focus_tags": [
+        "marker_loop",
+        "laplus_guard",
+        "route_explore"
+      ],
+      "signature_card_ids": [
+        "azki-map-search",
+        "azki-open-route"
+      ],
+      "performance_contract": {
+        "resource_base_path": "res://assets/characters/azki_necromancer/",
+        "required_states": [
+          "idle",
+          "defense",
+          "hurt",
+          "defeat",
+          "map_marker_attack",
+          "kiss_attack",
+          "command_dash",
+          "command_crash"
+        ],
+        "runtime_rule": "AZKi body, Laplus summon, and FX-only sprites remain separate layers"
+      },
+      "companion_actor_id": "laplus"
+    },
+    {
+      "actor_id": "laplus",
+      "display_name": "ラプラス・ダークネス",
+      "actor_type": "companion",
+      "owner_skill": "game-actor-pipeline",
+      "performance_contract": {
+        "resource_base_path": "res://assets/characters/laplus_darkness_summon/",
+        "max_hp": 10,
+        "required_states": [
+          "idle",
+          "defense",
+          "hurt",
+          "defeat",
+          "dash_attack",
+          "crash_attack"
+        ],
+        "runtime_rule": "Only AZKi combat creates Laplus summon; Laplus HP label must remain readable"
+      }
+    }
+  ],
+  "boss_pool": [
+    "subaruto-duck",
+    "ssrb-giant-gray",
+    "ssrb-giant-camouflage",
+    "ssrb-giant-white",
+    "youtube-kun-core",
+    "important-announcement"
+  ],
+  "screens": [
+    {
+      "screen_id": "character_select",
+      "owner_skill": "game-art-ui-continuity",
+      "intent": "三角色選擇與角色玩法提示"
+    },
+    {
+      "screen_id": "random_map",
+      "owner_skill": "game-art-ui-continuity",
+      "intent": "16 floor vertical scroll map, Boss name only, reachable node selection"
+    },
+    {
+      "screen_id": "chapter_start_event",
+      "owner_skill": "game-art-ui-continuity",
+      "intent": "Chapter transition event after Chapter 1 Boss reward, offering three character-neutral options such as relic, gold plus curse, remove, or upgrade"
+    },
+        {
+            "screen_id": "combat",
+            "owner_skill": "game-art-ui-continuity",
+            "intent": "Cards, actors, status, intent, relics, Boss warning, AZKi/Laplus/FX readability, and smooth hand hover/draw/discard motion"
+        },
+    {
+      "screen_id": "reward",
+      "owner_skill": "game-art-ui-continuity",
+      "intent": "Combat card reward and gold"
+    },
+    {
+      "screen_id": "chest_reward",
+      "owner_skill": "game-art-ui-continuity",
+      "intent": "Single relic claim or fallback gold"
+    },
+    {
+      "screen_id": "shop",
+      "owner_skill": "game-art-ui-continuity",
+      "intent": "Card/relic/remove-card purchases with price and discount clarity"
+    },
+    {
+      "screen_id": "campfire",
+      "owner_skill": "game-art-ui-continuity",
+      "intent": "Rest or upgrade choice"
+    },
+    {
+      "screen_id": "event",
+      "owner_skill": "game-art-ui-continuity",
+      "intent": "Risk/reward choices, curse, extra battle handoff"
+    },
+    {
+      "screen_id": "boss_reward",
+      "owner_skill": "game-art-ui-continuity",
+      "intent": "End-of-run reward and demo closure"
+    }
+  ],
+  "event_feedback_contract": {
+    "event_taxonomy": [
+      "ui",
+      "map",
+      "combat",
+      "status",
+      "actor_performance",
+      "reward",
+      "shop",
+      "campfire",
+      "event",
+      "boss"
+    ],
+    "event_cues": [
+      {
+        "event_id": "ui_select_character",
+        "sfx_cue": "ui_confirm_soft",
+        "music_context_id": "music_context_ui"
+      },
+      {
+        "event_id": "map_node_enter",
+        "sfx_cue": "map_node_confirm",
+        "music_context_id": "music_context_map"
+      },
+      {
+        "event_id": "combat_start",
+        "sfx_cue": "combat_enter_stinger",
+        "music_context_id": "music_context_combat"
+      },
+      {
+        "event_id": "card_played",
+        "sfx_cue": "card_play_generic",
+        "music_context_id": "music_context_combat"
+      },
+      {
+        "event_id": "status_marker_applied",
+        "sfx_cue": "marker_apply_ping",
+        "music_context_id": "music_context_combat"
+      },
+      {
+        "event_id": "marker_payoff_damage",
+        "sfx_cue": "marker_payoff_hit",
+        "music_context_id": "music_context_combat"
+      },
+      {
+        "event_id": "azki_laplus_dash",
+        "sfx_cue": "laplus_dash_whoosh",
+        "music_context_id": "music_context_combat"
+      },
+      {
+        "event_id": "azki_laplus_crash",
+        "sfx_cue": "laplus_crash_impact",
+        "music_context_id": "music_context_combat"
+      },
+      {
+        "event_id": "boss_warning",
+        "sfx_cue": "boss_warning_pulse",
+        "music_context_id": "music_context_boss"
+      },
+      {
+        "event_id": "battle_victory",
+        "sfx_cue": "battle_victory_stinger",
+        "music_context_id": "music_context_reward"
+      },
+      {
+        "event_id": "chapter_transition",
+        "sfx_cue": "chapter_transition_stinger",
+        "music_context_id": "music_context_map"
+      },
+      {
+        "event_id": "chapter_start_event_selected",
+        "sfx_cue": "event_choice_confirm",
+        "music_context_id": "music_context_event"
+      },
+      {
+        "event_id": "battle_defeat",
+        "sfx_cue": "battle_defeat_drop",
+        "music_context_id": "music_context_failure"
+      },
+      {
+        "event_id": "reward_claimed",
+        "sfx_cue": "reward_claim",
+        "music_context_id": "music_context_reward"
+      },
+      {
+        "event_id": "shop_purchase",
+        "sfx_cue": "shop_purchase_chime",
+        "music_context_id": "music_context_shop"
+      },
+      {
+        "event_id": "campfire_rest",
+        "sfx_cue": "campfire_rest_warm",
+        "music_context_id": "music_context_campfire"
+      },
+      {
+        "event_id": "event_choice_selected",
+        "sfx_cue": "event_choice_confirm",
+        "music_context_id": "music_context_event"
+      }
+    ],
+    "fx_bindings": [
+      {
+        "event_id": "status_marker_applied",
+        "fx_id": "map_marker_projectile",
+        "asset_path": "res://assets/fx/azki_necrobinder/map_marker_projectile/sheet-transparent.png"
+      },
+      {
+        "event_id": "azki_laplus_dash",
+        "fx_id": "laplus_dash_trail",
+        "asset_path": "res://assets/fx/azki_necrobinder/laplus_dash_trail/sheet-transparent.png"
+      },
+      {
+        "event_id": "azki_laplus_crash",
+        "fx_id": "laplus_crash_impact",
+        "asset_path": "res://assets/fx/azki_necrobinder/laplus_crash_impact/sheet-transparent.png"
+      }
+    ],
+    "music_contexts": [
+      "music_context_ui",
+      "music_context_map",
+      "music_context_combat",
+      "music_context_boss",
+      "music_context_reward",
+      "music_context_shop",
+      "music_context_campfire",
+      "music_context_event",
+      "music_context_failure"
+    ],
+    "mixing_rules": [
+      {
+        "rule_id": "mvp_manifest_only",
+        "description": "Audio assets are deferred; every player-facing event must still define sfx_cue or explicit silent_intentional."
+      },
+      {
+        "rule_id": "boss_warning_priority",
+        "description": "boss_warning cue has higher priority than generic card_played cue."
+      }
+    ]
+  },
+  "asset_demands": [
+    {
+      "demand_id": "azki_laplus_fx_readability",
+      "owner_skill": "game-actor-pipeline",
+      "status": "production_focus"
+    },
+    {
+      "demand_id": "combat_ui_safe_text",
+      "owner_skill": "game-art-ui-continuity",
+      "status": "production_focus"
+    },
+    {
+      "demand_id": "event_audio_manifest",
+      "owner_skill": "game-audio-feedback-pipeline",
+      "status": "contract_only"
+    },
+    {
+      "demand_id": "technical_demo_gate",
+      "owner_skill": "technical-director-qa",
+      "status": "required"
+    },
+    {
+      "demand_id": "creative_demo_gate",
+      "owner_skill": "creative-director-review",
+      "status": "required"
+    },
+        {
+            "demand_id": "chapter_2_foundation_pack",
+            "owner_skill": "game-design",
+            "status": "runtime_prototype"
+        }
+  ],
+  "downstream_handoffs": {
+    "game-director-orchestrator": "docs/production/director-production-plan.md",
+    "game-actor-pipeline": "docs/production/actor-contracts.json",
+    "game-art-ui-continuity": "docs/production/ui-continuity-report.md",
+    "game-audio-feedback-pipeline": "docs/production/audio-feedback-contract.md",
+    "technical-director-qa": "docs/production/technical-qa-report.md",
+    "creative-director-review": "docs/production/creative-director-review.md"
+  },
+  "acceptance_gates": [
+    {
+      "gate_id": "script_lock",
+      "owner_skill": "game-design",
+      "required_status": "passed"
+    },
+    {
+      "gate_id": "department_ready",
+      "owner_skill": "game-director-orchestrator",
+      "required_status": "passed"
+    },
+    {
+      "gate_id": "scene_playability",
+      "owner_skill": "technical-director-qa",
+      "required_status": "passed_or_manual_pending"
+    },
+    {
+      "gate_id": "technical_qa",
+      "owner_skill": "technical-director-qa",
+      "required_status": "passed"
+    },
+    {
+      "gate_id": "creative_director_review",
+      "owner_skill": "creative-director-review",
+      "required_status": "accepted_or_deferred_with_no_blockers"
+    }
+  ],
+  "unresolved_decisions": [
+    {
+      "id": "manual_full_run_results",
+      "owner": "human_qa",
+      "note": "Subaru / Botan / AZKi full 16 floor random run results must be recorded before desktop build readiness."
+    },
+        {
+            "id": "chapter_2_runtime_start",
+            "owner": "technical-director-qa",
+            "note": "Chapter 2 runtime prototype is connected; final art, balance, and manual QA remain pending. Chapter start event remains character-neutral and does not compensate AZKi directly."
+        }
+  ]
+}

@@ -1,0 +1,38 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Local / OS noise
+.DS_Store
+
+# Generated visual assets and source image outputs
+generated/
+
+# Image / visual binary assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp
+*.tga
+*.tif
+*.tiff
+*.ico
+*.svg
+*.aseprite
+*.psd
+*.kra
+
+# Godot image import metadata
+*.png.import
+*.jpg.import
+*.jpeg.import
+*.gif.import
+*.webp.import
+*.bmp.import
+*.tga.import
+*.tif.import
+*.tiff.import
+*.ico.import
+*.svg.import
