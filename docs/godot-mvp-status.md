@@ -390,7 +390,8 @@ HOME=/private/tmp/oshi-godot-user /Users/zhangzhipeng/MyProject/tools/Godot.app/
 - 正常流程的 Boss 會在 random map 生成時決定並顯示在地圖上；可用 `5` / `6` 指定 Boss 做單點手動驗收。
 - 卡牌與敵人平衡已加入第一輪資料門檻與 CombatEngine 測試，但仍需要實機手動遊玩確認體感。
 - 動態 UI 適合 MVP 快速迭代，但未來穩定後適合拆成 reusable scene/components。
-- 目前這個 workspace 看到的專案目錄不是 git repository。
+- 2026-05-15 已初始化 git repository，remote 指向 `https://github.com/newhandarky/oshi-no-tower.git`，`main` 已推送到 `origin/main`。
+- 2026-05-15 已依使用者要求將圖片 / 視覺二進位素材與 Godot 圖片 import metadata 加入 `.gitignore`；目前 repo 只追蹤文字、腳本、場景、文件與素材 pipeline metadata，不追蹤 PNG / SVG / generated 圖片輸出。
 - Web 版設計文件已搬到 `archive/legacy-docs/` 並調整成 Godot 現況版。
 - Web 版素材原始參考圖與角色 sprite 的 prompt / pipeline metadata 由使用者另行備份，不在本專案此次搬移範圍。
 - Unity 版是中途移植工程，含大量 Unity `Library` 快取與未提交檔案；目前不建議作為後續開發來源。
