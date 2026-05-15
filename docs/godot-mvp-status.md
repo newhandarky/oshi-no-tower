@@ -1,6 +1,6 @@
 # Godot MVP 狀態紀錄
 
-最近更新：2026-05-14
+最近更新：2026-05-15
 
 ## 專案
 
@@ -9,6 +9,8 @@
 - 主場景：`res://scenes/main.tscn`
 - 目前方向：以 Godot MVP 為主要實作。Unity 相關內容除非明確提到，否則視為歷史紀錄。
 - 下一階段方向：在目前 16 floor Godot MVP 流程穩定的前提下，繼續豐富 single-act demo 內容與手感，並把 Chapter 2 runtime prototype 收斂成可驗收內容。優先順序為三角色 build variety、AZKi / Laplus / marker 卡牌頻率、relic hook 角色互動、事件 / encounter 差異化、戰鬥 UI motion 與第二章平衡；desktop build、Web build、第四角色仍等 manual full-run gate 或明確 release decision 後再排。
+- 2026-05-15 Balance Pass 3 已落地：針對 code review 後 `hits` 正確生效造成的生存壓力，新增 fixed-seed auto-run balance gate，要求 Subaru / Botan / AZKi 三角色都能在保守 auto-play proxy 抵達第一章 Boss reward。`CardRewardDraft` 現在會普遍降低非 starter 重複卡，Subaru mid-run 會優先補 tempo block，Botan 已有多張 rare payoff 時會轉向防守 / 反擊橋接，AZKi 有 Laplus bridge 後會更早拿 payoff，且已有 payoff 後轉回防守橋接或不同收束。數值上 Botan max HP 74 -> 80，`botan-medkit-cover` / `botan-clean-scope` / `botan-overwatch` 小幅補強；`ssrb-debuff-check`、`announcement-shadow` 與入門 Boss `subaruto-duck` 下修尖峰壓力，保留其他 Boss 作為高壓隨機池。固定 seed 結果：Subaru / Botan / AZKi 皆抵達 `boss_reward`，分別剩 57 / 9 / 17 HP；本輪仍不做 GUI/manual QA。
+- 2026-05-15 Code Review Fix Pass 已落地：修正敵方 action `hits` 未結算的問題，現在 enemy `attack` / `attack_block` 會像玩家多段攻擊一樣逐段吃格擋與 overflow，讓 `comment-flood`、`notification-storm(-elite)` 等第二章多段壓力符合資料描述。CombatEngine 也會在打出 / 棄置 / 抽牌時清除 `_retained_from_previous_turn` runtime metadata，避免 Retain 卡洗回牌堆後被誤判為前回合保留。篝火升級與事件 `upgrade_card` 現在會排除 curse / unplayable / missing card，避免 `curse-dead-air+` 這類無意義升級。`RuntimeDatabase` 新增 `find_card` / `find_enemy` / `find_relic` safe lookup，並修正商店折扣 relic 描述只承諾降低移除卡服務，不再誤寫 relic 價格。已通過 CombatEngine、RuntimeDatabase、Shop/Campfire selection；本輪仍不做 GUI/manual QA。
 - 2026-05-13 Production Skill Pack 已落地第一輪 source-of-truth：新增 `GAME_DESIGN.md`、`game_design_bible.json`，以及 `docs/production/` 下的 director plan、actor contracts、UI continuity report、audio feedback contract、technical QA report、creative director review。這輪只鎖定 Godot MVP playable demo，不新增第四角色、新章節或 Web build；audio 先做 manifest-only contract，正式 SFX / BGM asset deferred。
 - 2026-05-13 Production contract 落地後自動 QA 已跑完：`combat_engine_tests.gd`、`runtime_database_tests.gd`、`combat_ui_layout_tests.gd`、`random_map_tests.gd`、`shop_campfire_selection_tests.gd`、`playable_demo_smoke_tests.gd` 與 Godot `--quit` 均通過；`game_design_bible.json` 與 `docs/production/actor-contracts.json` 也通過 JSON parse。`runtime_database_tests` / `combat_ui_layout_tests` 仍有既有 `ObjectDB instances leaked` warning。Technical QA 仍維持 manual full-run pending，Creative Director Review 仍需實機三角色 QA 後才能 accepted。
 - 2026-05-13 Playable Demo Manual Gate 第一段已執行：重跑指定自動 QA 全通；新增 `docs/production/playable-demo-qa-results.md`。實機 spot check 已確認角色選擇可見、AZKi 可進 16 floor random map、當時版本 Boss hint 可讀、第一場普通戰可進、AZKi body / Laplus summon / Laplus HP label 可見、`marker` fallback 顯示繁中 `標記`，且 `map_marker_attack` / `kiss_attack` 未見明顯 UI 遮擋。2026-05-14 起 Boss hint 已從 random map 移除。尚未完成 Subaru / Botan / AZKi 三角色完整 16 floor manual run，`laplus_dash` / `laplus_crash`、Boss warning、tooltip、hand hover 與 event option overflow 仍需人工確認；Technical QA 維持 `needs_revision`，Desktop Build Readiness 維持 `not_ready`。

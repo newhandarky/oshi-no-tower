@@ -13,6 +13,7 @@ func _run() -> void:
 	await _test_campfire_can_upgrade_selected_card()
 	await _test_shop_and_campfire_selection_screens_are_scrollable()
 	await _test_upgraded_cards_are_hidden_from_campfire_upgrade_selection()
+	await _test_curse_cards_are_hidden_from_campfire_upgrade_selection()
 	await _test_shop_inventory_persists_for_same_node()
 
 	if failures.is_empty():
@@ -118,6 +119,21 @@ func _test_upgraded_cards_are_hidden_from_campfire_upgrade_selection() -> void:
 	var visible_text := _screen_text(app)
 	_expect_false(visible_text.contains("節奏拳+"), "已升級卡不應出現在篝火可升級清單")
 	_expect_true(visible_text.contains("團隊防守"), "未升級卡仍應出現在篝火升級清單")
+	app.queue_free()
+
+func _test_curse_cards_are_hidden_from_campfire_upgrade_selection() -> void:
+	var app = MainScene.instantiate()
+	root.add_child(app)
+	await process_frame
+
+	app.run_state.start_run(app.database, "subaru")
+	app.run_state.deck_ids.append("curse-dead-air")
+	app.show_campfire_upgrade_selection()
+	await process_frame
+
+	var visible_text := _screen_text(app)
+	_expect_false(visible_text.contains("Dead Air"), "curse / unplayable 卡不應出現在篝火可升級清單")
+	_expect_false(app._upgrade_card_at_index(app.run_state.deck_ids.size() - 1), "curse / unplayable 卡不可透過 helper 被升級")
 	app.queue_free()
 
 func _test_shop_inventory_persists_for_same_node() -> void:

@@ -94,7 +94,7 @@ func _test_stat_values_are_single_line_pairs_without_draw_discard() -> void:
 	app.start_combat(app.database.map_nodes[1])
 	await process_frame
 
-	var stat_values := ["HP 74/74", "能量 3/3", "HP 36/36"]
+	var stat_values := ["HP 80/80", "能量 3/3", "HP 36/36"]
 	for value in stat_values:
 		var label := _find_label(app, value)
 		_expect_true(label != null, "狀態數值 label 應存在：%s" % value)

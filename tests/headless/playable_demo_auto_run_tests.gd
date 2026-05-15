@@ -18,12 +18,12 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var cases := [
-		{ "id": "subaru", "seed": 2026051341 },
-		{ "id": "botan", "seed": 2026051342 },
-		{ "id": "azki", "seed": 2026051343 }
+		{ "id": "subaru", "seed": 2026051341, "required_result": "boss_reward_reached" },
+		{ "id": "botan", "seed": 2026051342, "required_result": "boss_reward_reached" },
+		{ "id": "azki", "seed": 2026051343, "required_result": "boss_reward_reached" }
 	]
 	for character_case in cases:
-		await _run_auto_case(str(character_case["id"]), int(character_case["seed"]))
+		await _run_auto_case(str(character_case["id"]), int(character_case["seed"]), str(character_case["required_result"]))
 
 	await _test_chapter_2_transition_auto_proxy()
 	await _test_azki_forced_laplus_actions()
@@ -42,7 +42,7 @@ func _run() -> void:
 		print("playable_demo_auto_run_tests: failed (%d)" % failures.size())
 		quit(1)
 
-func _run_auto_case(character_id: String, run_seed: int) -> void:
+func _run_auto_case(character_id: String, run_seed: int, required_result: String = "") -> void:
 	var app = MainScene.instantiate()
 	root.add_child(app)
 	await process_frame
@@ -109,7 +109,7 @@ func _run_auto_case(character_id: String, run_seed: int) -> void:
 
 	_update_log_from_app(log, app)
 	run_logs.append(log.duplicate(true))
-	_validate_run_log(log)
+	_validate_run_log(log, required_result)
 	app.queue_free()
 
 func _advance_current_screen(app: Node, log: Dictionary, step_seed: int) -> bool:
@@ -437,10 +437,12 @@ func _test_boss_warning_proxy() -> void:
 	if state.turn_events.size() > 0:
 		_expect_eq(str(state.turn_events[0].get("id", "")), "boss-warning", "Boss warning event id 應存在於 turn_events")
 
-func _validate_run_log(log: Dictionary) -> void:
+func _validate_run_log(log: Dictionary, required_result: String = "") -> void:
 	var character_id := str(log.get("character_id", ""))
 	var result := str(log.get("result", ""))
 	_expect_true(result in ["boss_reward_reached", "defeated"], "%s auto-run 應抵達 Boss reward 或死亡收束，實際：%s" % [character_id, result])
+	if required_result != "":
+		_expect_eq(result, required_result, "%s fixed-seed balance proxy 應達成 %s" % [character_id, required_result])
 	_expect_true(int(log.get("visited_node_count", 0)) >= 2 or result == "defeated", "%s auto-run 應至少完成多個節點或死亡收束" % character_id)
 	_expect_true(int(log.get("combat_count", 0)) >= 1, "%s auto-run 應至少完成一場戰鬥流程" % character_id)
 	_expect_true(str(log.get("final_screen", "")) in ["map", "reward", "boss_reward", "run_end"], "%s auto-run 不應停在 blocking screen：%s" % [character_id, str(log.get("final_screen", ""))])

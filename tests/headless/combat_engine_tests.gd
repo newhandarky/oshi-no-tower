@@ -17,6 +17,7 @@ func _run() -> void:
 	_test_block_card_prevents_enemy_damage()
 	_test_draw_and_energy_effects_resolve()
 	_test_enemy_block_and_attack_block_actions_resolve()
+	_test_enemy_multi_hit_attack_resolves_each_hit()
 	_test_victory_when_enemy_hp_reaches_zero()
 	_test_defeat_when_player_hp_reaches_zero()
 	_test_discard_recycles_into_draw_pile()
@@ -37,6 +38,7 @@ func _run() -> void:
 	_test_marker_layers_do_not_decay_at_turn_end()
 	_test_cards_played_count_conditional_effect_and_reset()
 	_test_retain_keeps_card_and_exhaust_on_play_exhausts_card()
+	_test_retained_runtime_marker_is_cleared_after_play()
 	_test_summon_heal_restores_laplus_hp()
 	_test_summon_hp_damage_uses_current_laplus_hp()
 	_test_relic_trigger_v2_applies_once_per_turn()
@@ -124,6 +126,17 @@ func _test_enemy_block_and_attack_block_actions_resolve() -> void:
 	engine.end_player_turn(state)
 	_expect_eq(state.player_hp, 23, "attack_block 造成玩家傷害")
 	_expect_eq(state.enemy_block, 11, "attack_block 同時增加敵人格擋")
+
+func _test_enemy_multi_hit_attack_resolves_each_hit() -> void:
+	var state = _start_state(
+		_deck(["subaru-guard"]),
+		_enemy_actions([{ "type": "attack", "damage": 3, "hits": 4, "block": 0, "description": "多段 3x4" }])
+	)
+	engine.try_play_card(state, 0)
+
+	engine.end_player_turn(state)
+
+	_expect_eq(state.player_hp, 23, "敵方 hits 應逐段結算，5 格擋面對 3x4 後應承受 7 傷害")
 
 func _test_victory_when_enemy_hp_reaches_zero() -> void:
 	var state = _start_state(_deck(["subaru-tsukkomi"]), _enemy_attack(1, 10))
@@ -346,6 +359,16 @@ func _test_retain_keeps_card_and_exhaust_on_play_exhausts_card() -> void:
 	engine.try_play_card(state, 0)
 	_expect_eq(state.exhaust_pile.size(), 1, "exhaust_on_play 卡打出後應進 exhaust pile")
 	_expect_eq(state.discard_pile.size(), 0, "exhaust_on_play 卡不應進 discard pile")
+
+func _test_retained_runtime_marker_is_cleared_after_play() -> void:
+	var retain_card := { "id": "test-retain", "name": "Test Retain", "cost": 0, "kind": "defense", "retain": true, "effects": [{ "type": "block", "amount": 3 }] }
+	var state = engine.start_combat(30, 30, [retain_card], _enemy_attack(0, 30))
+	engine.end_player_turn(state)
+
+	engine.try_play_card(state, 0)
+
+	_expect_eq(state.discard_pile.size(), 1, "保留牌打出後應進 discard pile")
+	_expect_false(bool(state.discard_pile[0].get("_retained_from_previous_turn", false)), "打出保留牌後不應把 runtime retain 標記帶進 discard pile")
 
 func _test_summon_heal_restores_laplus_hp() -> void:
 	var summon_heal_card := { "id": "test-summon-heal", "name": "Test Summon Heal", "cost": 0, "kind": "defense", "effects": [{ "type": "summon_heal", "amount": 3 }] }

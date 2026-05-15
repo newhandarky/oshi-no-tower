@@ -11,6 +11,8 @@ func _initialize() -> void:
 func _run() -> void:
 	_test_content_pack_2a_enemy_questions_exist()
 	_test_pressure_tags_match_enemy_action_patterns()
+	_test_single_act_late_debuff_enemies_stay_within_survival_caps()
+	_test_single_act_boss_spikes_stay_within_demo_auto_run_caps()
 
 	if failures.is_empty():
 		print("enemy_design_tests: ok")
@@ -46,6 +48,20 @@ func _test_pressure_tags_match_enemy_action_patterns() -> void:
 			_expect_true(_has_action(enemy, "debuff"), "%s debuff_resilience 敵人必須有 debuff action" % enemy_id)
 		if pressure_tags.has("scaling_clock"):
 			_expect_true(_has_action(enemy, "buff"), "%s scaling_clock 敵人必須有 buff action" % enemy_id)
+
+func _test_single_act_late_debuff_enemies_stay_within_survival_caps() -> void:
+	_expect_enemy_action_cap("ssrb-debuff-check", "attack", "damage", 17, "SSRB Debuff Check 易傷後追擊不可超出未成形 deck 生存線")
+	_expect_enemy_action_cap("announcement-shadow", "attack", "damage", 18, "Announcement Shadow 易傷後重擊不可直接吃掉 late-floor 保守 deck")
+
+func _test_single_act_boss_spikes_stay_within_demo_auto_run_caps() -> void:
+	_expect_enemy_action_cap("subaruto-duck", "attack", "damage", 10, "Subaruto Duck 起手攻擊需符合低尖峰 demo Boss 定位")
+	_expect_enemy_action_cap("subaruto-duck", "attack_block", "damage", 14, "Subaruto Duck 攻防回合需保留 AZKi / summon build 的收束窗口")
+
+func _expect_enemy_action_cap(enemy_id: String, action_type: String, field: String, cap: int, message: String) -> void:
+	var enemy := database.get_enemy(enemy_id)
+	for action in enemy.get("actions", []):
+		if str(action.get("type", "")) == action_type:
+			_expect_true(int(action.get(field, 0)) <= cap, "%s：%s %s.%s <= %d" % [message, enemy_id, action_type, field, cap])
 
 func _has_action(enemy: Dictionary, action_type: String) -> bool:
 	for action in enemy.get("actions", []):

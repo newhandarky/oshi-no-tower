@@ -20,6 +20,10 @@ func _run() -> void:
 	_test_azki_chapter_2_reward_draft_bridges_marker_and_laplus()
 	_test_azki_reward_draft_penalizes_repeated_laplus_bridge_cards()
 	_test_azki_chapter_2_shop_frontloads_marker_guard_and_payoff()
+	_test_subaru_midrun_reward_prefers_tempo_block_over_repeat_sustain()
+	_test_azki_midrun_reward_turns_laplus_bridge_into_payoff()
+	_test_botan_midrun_reward_limits_repeat_rare_payoff()
+	_test_azki_midrun_reward_does_not_repeat_existing_payoff()
 
 	if failures.is_empty():
 		print("reward_draft_tests: ok")
@@ -101,6 +105,58 @@ func _test_azki_chapter_2_shop_frontloads_marker_guard_and_payoff() -> void:
 	_expect_true(_any_card_has_archetype(front, "marker_loop"), "AZKi Chapter 2 shop 前排需有 marker 節奏牌")
 	_expect_true(_any_card_has_archetype(front, "laplus_guard"), "AZKi Chapter 2 shop 前排需有 Laplus 防守橋接")
 	_expect_true(_any_card_has_role(front, "payoff") or _any_card_has_role(front, "scaling"), "AZKi Chapter 2 shop 前排需有收束或 scaling 選項")
+
+func _test_subaru_midrun_reward_prefers_tempo_block_over_repeat_sustain() -> void:
+	var pool := _subaru_pool()
+	var deck_ids := [
+		"subaru-strike", "subaru-strike", "subaru-strike",
+		"subaru-guard", "subaru-guard", "subaru-guard",
+		"subaru-duck-rush", "subaru-draw-breath", "subaru-tsukkomi",
+		"subaru-opening-quack", "subaru-cheer-recover", "subaru-blue-wave",
+		"subaru-hype-call"
+	]
+	var result: Array[String] = drafter.draft(database, pool, deck_ids, [], 3, 9, 2026051341)
+
+	_expect_true(result.has("subaru-crowd-cover") or result.has("subaru-rhythm-guard") or result.has("subaru-desk-reaction") or result.has("subaru-new-oshi-call"), "Subaru mid-run reward 應補 tempo block，而不是繼續堆純續航 / buff")
+	_expect_false(result.has("subaru-cheer-recover"), "Subaru 已有續航後不應再把 cheer-recover 放進固定 seed 前排")
+
+func _test_azki_midrun_reward_turns_laplus_bridge_into_payoff() -> void:
+	var pool := _azki_pool()
+	var deck_ids := [
+		"azki-map-shot", "azki-map-shot", "azki-map-shot", "azki-map-shot",
+		"azki-guard", "azki-guard", "azki-guard", "azki-pinpoint", "azki-tune-up", "azki-kiss",
+		"azki-laplus-guard-order", "azki-laplus-contract", "azki-dark-tether",
+		"azki-singing-coordinate", "azki-route-marker"
+	]
+	var result: Array[String] = drafter.draft(database, pool, deck_ids, [], 3, 10, 2026051343)
+
+	_expect_true(result.has("azki-laplus-overflow") or result.has("azki-necrobinder-finale") or result.has("azki-laplus-crash") or result.has("azki-laplus-combo"), "AZKi 已有 Laplus bridge 後 mid-run reward 應轉向收束牌")
+	_expect_false(result.has("azki-singing-coordinate") and result.has("azki-route-marker"), "AZKi mid-run reward 不應同時塞重複 marker draw bridge")
+
+func _test_botan_midrun_reward_limits_repeat_rare_payoff() -> void:
+	var pool := _botan_pool()
+	var deck_ids := [
+		"botan-shot", "botan-shot", "botan-shot", "botan-shot",
+		"botan-cover", "botan-cover", "botan-cover", "botan-burst", "botan-reload", "botan-mark",
+		"botan-medkit-cover", "botan-perfect-line", "botan-perfect-line", "botan-precise-cover"
+	]
+	var result: Array[String] = drafter.draft(database, pool, deck_ids, [], 3, 11, 2026051342)
+
+	_expect_false(result.has("botan-perfect-line"), "Botan 已有多張 perfect-line 時不應繼續推重複 rare payoff")
+	_expect_true(result.has("botan-clean-scope") or result.has("botan-overwatch") or result.has("botan-fortified-cover") or result.has("botan-counter-line"), "Botan mid-run reward 應補防守或反擊橋接")
+
+func _test_azki_midrun_reward_does_not_repeat_existing_payoff() -> void:
+	var pool := _azki_pool()
+	var deck_ids := [
+		"azki-map-shot", "azki-map-shot", "azki-map-shot", "azki-map-shot",
+		"azki-guard", "azki-guard", "azki-guard", "azki-pinpoint", "azki-tune-up", "azki-kiss",
+		"azki-laplus-guard-order", "azki-laplus-contract", "azki-dark-tether",
+		"azki-laplus-overflow", "azki-necrobinder-finale"
+	]
+	var result: Array[String] = drafter.draft(database, pool, deck_ids, [], 3, 11, 2026051343)
+
+	_expect_false(result.has("azki-laplus-overflow") or result.has("azki-necrobinder-finale"), "AZKi 已有 Laplus payoff 時不應繼續重複塞同名收束牌")
+	_expect_true(result.has("azki-laplus-cover") or result.has("azki-laplus-reposition") or result.has("azki-safe-route") or result.has("azki-laplus-combo"), "AZKi 已有 payoff 後 reward 應補防守橋接或不同收束")
 
 func _subaru_pool() -> Array[String]:
 	return [
