@@ -11,6 +11,7 @@ func draft(database, pool, deck_ids, relic_ids, amount: int, floor: int, seed: i
 	var selected: Array[String] = []
 	_add_pick(selected, _pick_azki_early_survival_bridge(database, valid_pool, deck_signal, floor, selected))
 	_add_pick(selected, _pick_build_relevant(database, valid_pool, deck_signal, floor, seed, selected))
+	_add_pick(selected, _pick_role_gap(database, valid_pool, deck_signal, floor, seed + 11, selected))
 	_add_pick(selected, _pick_survival_or_bridge(database, valid_pool, deck_signal, floor, seed + 17, selected))
 	_add_pick(selected, _pick_wildcard(database, valid_pool, deck_signal, floor, seed + 31, selected))
 	while selected.size() < amount:
@@ -62,11 +63,32 @@ func _pick_survival_or_bridge(database, pool: Array[String], deck_signal: Dictio
 			candidates.append(card_id)
 	return _pick_best(database, candidates if not candidates.is_empty() else pool, deck_signal, floor, seed, exclude)
 
+func _pick_role_gap(database, pool: Array[String], deck_signal: Dictionary, floor: int, seed: int, exclude: Array[String]) -> String:
+	var target_roles: Array[String] = []
+	if int(deck_signal.get("role:defense", 0)) < 3:
+		target_roles.append("defense")
+	if int(deck_signal.get("role:payoff", 0)) < 2:
+		target_roles.append("payoff")
+	if floor >= 7 and int(deck_signal.get("role:scaling", 0)) < 1:
+		target_roles.append("scaling")
+	if int(deck_signal.get("role:bridge", 0)) < 2:
+		target_roles.append("bridge")
+	if target_roles.is_empty():
+		return ""
+	var candidates: Array[String] = []
+	for card_id in pool:
+		if exclude.has(card_id):
+			continue
+		var card: Dictionary = database.get_card(card_id)
+		if _has_any_role(card, target_roles):
+			candidates.append(card_id)
+	return _pick_best(database, candidates, deck_signal, floor, seed, exclude)
+
 func _pick_wildcard(database, pool: Array[String], deck_signal: Dictionary, floor: int, seed: int, exclude: Array[String]) -> String:
 	return _pick_best(database, pool, deck_signal, floor, seed, exclude)
 
 func _pick_azki_early_survival_bridge(database, pool: Array[String], deck_signal: Dictionary, floor: int, exclude: Array[String]) -> String:
-	if floor > 5 or int(deck_signal.get("marker_loop", 0)) < 1:
+	if floor > 6 or int(deck_signal.get("marker_loop", 0)) < 1:
 		return ""
 	for preferred_id in ["azki-laplus-guard-order", "azki-laplus-contract", "azki-dark-tether", "azki-safe-route"]:
 		if exclude.has(preferred_id) or not pool.has(preferred_id):
@@ -108,6 +130,7 @@ func _card_score(card: Dictionary, deck_signal: Dictionary, floor: int) -> float
 	score += _azki_early_survival_bonus(card, deck_signal, floor)
 	score += _azki_chapter_2_consistency_bonus(card, deck_signal, floor)
 	score += _azki_midrun_payoff_bonus(card, deck_signal, floor)
+	score += _role_gap_bonus(card, deck_signal, floor)
 	if _has_any_role(card, SURVIVAL_ROLES):
 		score += 7.0
 	if card.get("role_tags", []).has("setup"):
@@ -123,6 +146,18 @@ func _card_score(card: Dictionary, deck_signal: Dictionary, floor: int) -> float
 			score -= 20.0
 		"curse":
 			score -= 100.0
+	return score
+
+func _role_gap_bonus(card: Dictionary, deck_signal: Dictionary, floor: int) -> float:
+	var score := 0.0
+	if int(deck_signal.get("role:defense", 0)) < 3 and card.get("role_tags", []).has("defense"):
+		score += 42.0
+	if int(deck_signal.get("role:payoff", 0)) < 2 and card.get("role_tags", []).has("payoff"):
+		score += 38.0
+	if floor >= 7 and int(deck_signal.get("role:scaling", 0)) < 1 and card.get("role_tags", []).has("scaling"):
+		score += 52.0
+	if int(deck_signal.get("role:bridge", 0)) < 2 and card.get("role_tags", []).has("bridge"):
+		score += 18.0
 	return score
 
 func _subaru_midrun_tempo_block_bonus(card: Dictionary, deck_signal: Dictionary, floor: int) -> float:
@@ -242,6 +277,8 @@ func _build_signal(database, deck_ids, relic_ids) -> Dictionary:
 		var card: Dictionary = database.get_card(base_id)
 		for tag in card.get("archetype_tags", []):
 			deck_signal[str(tag)] = int(deck_signal.get(str(tag), 0)) + 1
+		for role in card.get("role_tags", []):
+			deck_signal["role:%s" % str(role)] = int(deck_signal.get("role:%s" % str(role), 0)) + 1
 	for relic_id in relic_ids:
 		var relic: Dictionary = database.get_relic(str(relic_id))
 		for tag in relic.get("archetype_tags", []):

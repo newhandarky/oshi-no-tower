@@ -1088,7 +1088,8 @@ func _character_reward_cards() -> Array[String]:
 			"azki-laplus-cover", "azki-coordinate-barrage", "azki-laplus-combo",
 			"azki-marker-echo", "azki-laplus-reposition", "azki-route-marker",
 			"azki-laplus-guard-order", "azki-laplus-contract", "azki-dark-tether",
-			"azki-singing-coordinate", "azki-laplus-overflow", "azki-necrobinder-finale"
+			"azki-singing-coordinate", "azki-laplus-overflow", "azki-necrobinder-finale",
+			"azki-phantom-route", "azki-necro-recall", "azki-laplus-release"
 		]
 	if run_state.character_id == "botan":
 		return [
@@ -1097,7 +1098,8 @@ func _character_reward_cards() -> Array[String]:
 			"botan-suppressive-fire", "botan-tactical-focus", "botan-medkit-cover",
 			"botan-button-check", "botan-clean-scope", "botan-calm-burst", "botan-precise-cover",
 			"botan-funds-prepared", "botan-range-finder", "botan-overwatch",
-			"botan-piercing-round", "botan-perfect-line"
+			"botan-piercing-round", "botan-perfect-line", "botan-kill-zone",
+			"botan-cover-reload", "botan-flashbang-round"
 		]
 	return [
 		"subaru-duck-rush", "subaru-draw-breath", "subaru-tsukkomi", "subaru-second-wind",
@@ -1105,7 +1107,8 @@ func _character_reward_cards() -> Array[String]:
 		"subaru-team-rush", "subaru-hype-call", "subaru-duck-feint", "subaru-cheer-recover",
 		"subaru-duck-tempo", "subaru-teetee-guard", "subaru-desk-reaction", "subaru-blue-wave",
 		"subaru-new-oshi-call", "subaru-opening-quack", "subaru-crowd-cover",
-		"subaru-table-slam-loop", "subaru-unstoppable-cheer"
+		"subaru-table-slam-loop", "subaru-unstoppable-cheer", "subaru-combo-boost",
+		"subaru-encore-recall", "subaru-afterimage-table"
 	]
 
 func _current_floor_for_draft() -> int:
@@ -1357,7 +1360,8 @@ func _character_shop_cards() -> Array[String]:
 			"azki-laplus-cover", "azki-coordinate-barrage", "azki-laplus-combo",
 			"azki-marker-echo", "azki-laplus-reposition", "azki-route-marker",
 			"azki-laplus-guard-order", "azki-laplus-contract", "azki-dark-tether",
-			"azki-singing-coordinate", "azki-laplus-overflow", "azki-necrobinder-finale"
+			"azki-singing-coordinate", "azki-laplus-overflow", "azki-necrobinder-finale",
+			"azki-phantom-route", "azki-necro-recall", "azki-laplus-release"
 		]
 	if run_state.character_id == "botan":
 		return [
@@ -1365,14 +1369,16 @@ func _character_shop_cards() -> Array[String]:
 			"botan-fortified-cover", "botan-counter-line", "botan-suppressive-fire", "botan-tactical-focus",
 			"botan-button-check", "botan-clean-scope", "botan-calm-burst", "botan-precise-cover",
 			"botan-funds-prepared", "botan-range-finder", "botan-overwatch",
-			"botan-piercing-round", "botan-perfect-line"
+			"botan-piercing-round", "botan-perfect-line", "botan-kill-zone",
+			"botan-cover-reload", "botan-flashbang-round"
 		]
 	return [
 		"subaru-tsukkomi", "subaru-second-wind", "subaru-duck-rush", "subaru-rhythm-guard",
 		"subaru-cheer-loop", "subaru-team-rush", "subaru-hype-call", "subaru-duck-feint",
 		"subaru-duck-tempo", "subaru-teetee-guard", "subaru-desk-reaction", "subaru-blue-wave",
 		"subaru-new-oshi-call", "subaru-opening-quack", "subaru-crowd-cover",
-		"subaru-table-slam-loop", "subaru-unstoppable-cheer"
+		"subaru-table-slam-loop", "subaru-unstoppable-cheer", "subaru-combo-boost",
+		"subaru-encore-recall", "subaru-afterimage-table"
 	]
 
 func _debug_open_character_select() -> void:

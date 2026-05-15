@@ -35,6 +35,7 @@ func _run() -> void:
 	_test_botan_survival_bridge_cards_have_demo_balance_floor()
 	_test_content_pack_1b_cards_and_relics_are_connected()
 	_test_content_pack_2a_cards_are_connected()
+	_test_card_depth_v1_cards_are_connected()
 	_test_upgrade_v2_uses_card_specific_effects()
 	_test_enemy_pressure_metadata_is_valid()
 	await _test_reward_and_shop_cards_are_valid()
@@ -152,7 +153,7 @@ func _test_card_depth_metadata_is_valid() -> void:
 
 func _test_cards_have_valid_effects_and_assets() -> void:
 	var allowed_kinds := { "attack": true, "defense": true, "support": true, "mixed": true }
-	var allowed_effects := { "damage": true, "block": true, "draw": true, "draw_if_status": true, "energy": true, "status": true, "conditional": true, "summon_heal": true, "summon_hp_damage": true }
+	var allowed_effects := { "damage": true, "block": true, "draw": true, "draw_if_status": true, "energy": true, "status": true, "conditional": true, "summon_heal": true, "summon_hp_damage": true, "next_attack_bonus": true, "draw_from_discard": true, "temporary_card": true }
 	var seen_ids: Dictionary = {}
 	for card in database.cards:
 		var card_id := str(card.get("id", ""))
@@ -172,6 +173,10 @@ func _test_cards_have_valid_effects_and_assets() -> void:
 			if effect_type == "summon_hp_damage":
 				_expect_true(int(effect.get("base", 0)) > 0, "%s summon_hp_damage base 必須大於 0" % card_id)
 				_expect_true(int(effect.get("per_hp", 0)) > 0, "%s summon_hp_damage per_hp 必須大於 0" % card_id)
+				continue
+			if effect_type == "temporary_card":
+				_expect_true(effect.has("card"), "%s temporary_card 必須提供內嵌 card" % card_id)
+				_expect_true(int(effect.get("amount", 1)) > 0, "%s temporary_card amount 必須大於 0" % card_id)
 				continue
 			_expect_true(int(effect["amount"]) > 0, "%s effect amount 必須大於 0" % card_id)
 			if effect_type == "damage":
@@ -529,6 +534,41 @@ func _test_content_pack_2a_cards_are_connected() -> void:
 		_expect_not_empty(str(card.get("expected_art_path", "")), "%s 新卡必須預留 expected_art_path" % card_id)
 		_expect_eq(str(card.get("art_path", "")), "", "%s prototype placeholder 新卡不應要求正式 art_path" % card_id)
 
+func _test_card_depth_v1_cards_are_connected() -> void:
+	var required_ids := [
+		"subaru-combo-boost", "subaru-encore-recall", "subaru-afterimage-table",
+		"botan-kill-zone", "botan-cover-reload", "botan-flashbang-round",
+		"azki-phantom-route", "azki-necro-recall", "azki-laplus-release"
+	]
+	var required_effects := {
+		"next_attack_bonus": false,
+		"draw_from_discard": false,
+		"temporary_card": false,
+		"exhaust_count_at_least": false
+	}
+	for card_id in required_ids:
+		var card := database.get_card(card_id)
+		_expect_eq(str(card.get("id", "")), card_id, "卡牌深度 v1 卡牌必須存在：%s" % card_id)
+		_expect_true(card.get("archetype_tags", []).size() > 0, "%s 必須有 archetype_tags" % card_id)
+		_expect_true(card.get("role_tags", []).size() > 0, "%s 必須有 role_tags" % card_id)
+		_expect_true(["common", "uncommon", "rare"].has(str(card.get("rarity", ""))), "%s 必須有合法 rarity" % card_id)
+		_expect_true(["early", "mid", "late"].has(str(card.get("floor_band", ""))), "%s 必須有合法 floor_band" % card_id)
+		_expect_true(card.has("upgrade_effects"), "%s 必須定義 upgrade_effects" % card_id)
+		_expect_not_empty(str(card.get("upgrade_description", "")), "%s 必須定義 upgrade_description" % card_id)
+		_expect_not_empty(str(card.get("upgrade_signal", "")), "%s 必須定義 upgrade_signal" % card_id)
+		_expect_eq(str(card.get("art_status", "")), "prototype_placeholder", "%s v1 prototype 應標記 prototype placeholder" % card_id)
+		_expect_eq(str(card.get("art_path", "")), "", "%s v1 prototype 不應要求正式卡圖" % card_id)
+		for effect in card.get("effects", []):
+			_collect_v1_effect_schema(effect, required_effects)
+		var upgraded := database.get_card("%s+" % card_id)
+		_expect_eq(str(upgraded.get("id", "")), "%s+" % card_id, "%s 升級版必須可由 RuntimeDatabase 取出" % card_id)
+		_expect_eq(str(upgraded.get("description", "")), str(card.get("upgrade_description", "")), "%s+ 必須使用 upgrade_description" % card_id)
+	for effect_name in required_effects.keys():
+		_expect_true(bool(required_effects[effect_name]), "卡牌深度 v1 必須至少覆蓋 effect schema：%s" % str(effect_name))
+	_expect_true(_archetype_has_roles("cheap_chain", ["setup", "bridge", "defense", "payoff", "scaling"]), "Subaru cheap_chain 必須覆蓋主流派基本 roles")
+	_expect_true(_archetype_has_roles("two_cost_burst", ["setup", "bridge", "defense", "payoff", "scaling"]), "Botan two_cost_burst 必須覆蓋主流派基本 roles")
+	_expect_true(_archetype_has_roles("marker_loop", ["setup", "bridge", "defense", "payoff", "scaling"]), "AZKi marker_loop 必須覆蓋主流派基本 roles")
+
 func _test_upgrade_v2_uses_card_specific_effects() -> void:
 	var base := database.get_card("subaru-opening-quack")
 	var upgraded := database.get_card("subaru-opening-quack+")
@@ -855,6 +895,35 @@ func _card_has_effect(card: Dictionary, effect_type: String) -> bool:
 		if str(effect.get("type", "")) == effect_type:
 			return true
 	return false
+
+func _collect_v1_effect_schema(effect: Dictionary, schema_flags: Dictionary) -> void:
+	var effect_type := str(effect.get("type", ""))
+	if schema_flags.has(effect_type):
+		schema_flags[effect_type] = true
+	if effect.has("condition"):
+		var condition: Dictionary = effect.get("condition", {})
+		if condition.has("exhaust_count_at_least"):
+			schema_flags["exhaust_count_at_least"] = true
+	for nested_variant in effect.get("effects", []):
+		var nested: Dictionary = nested_variant
+		_collect_v1_effect_schema(nested, schema_flags)
+	if effect_type == "temporary_card":
+		var temp_card: Dictionary = effect.get("card", {})
+		for nested_variant in temp_card.get("effects", []):
+			var nested: Dictionary = nested_variant
+			_collect_v1_effect_schema(nested, schema_flags)
+
+func _archetype_has_roles(archetype_tag: String, required_roles: Array[String]) -> bool:
+	var found_roles: Dictionary = {}
+	for card in database.cards:
+		if not card.get("archetype_tags", []).has(archetype_tag):
+			continue
+		for role in card.get("role_tags", []):
+			found_roles[str(role)] = true
+	for role in required_roles:
+		if not found_roles.has(str(role)):
+			return false
+	return true
 
 func _card_has_status(card: Dictionary, status_id: String) -> bool:
 	for effect in card.get("effects", []):

@@ -25,6 +25,7 @@ var relic_flags: Dictionary = {}
 var relic_turn_flags: Dictionary = {}
 var turn_events: Array[Dictionary] = []
 var cards_played_this_turn: int = 0
+var next_attack_bonus: int = 0
 var summon_id: String = ""
 var summon_hp: int = 0
 var summon_max_hp: int = 0
