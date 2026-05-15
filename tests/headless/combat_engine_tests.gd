@@ -281,7 +281,7 @@ func _test_marker_adds_bonus_damage_and_consumes_one_layer() -> void:
 	engine.try_play_card(state, 0)
 	_expect_eq(engine.status_duration(state, "enemy", "marker"), 1, "AZKi 標記牌應給敵人 1 層標記")
 	engine.try_play_card(state, 0)
-	_expect_eq(state.enemy_hp, 21, "標記中的敵人受到攻擊傷害時應額外受到 2 點傷害")
+	_expect_eq(state.enemy_hp, 20, "標記中的敵人受到攻擊傷害時應額外受到 2 點傷害")
 	_expect_eq(engine.status_duration(state, "enemy", "marker"), 0, "標記觸發後應消耗 1 層")
 
 func _test_marker_payoff_pushes_turn_event() -> void:

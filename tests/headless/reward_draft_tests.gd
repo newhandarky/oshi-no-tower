@@ -23,7 +23,9 @@ func _run() -> void:
 	_test_subaru_midrun_reward_prefers_tempo_block_over_repeat_sustain()
 	_test_azki_midrun_reward_turns_laplus_bridge_into_payoff()
 	_test_botan_midrun_reward_limits_repeat_rare_payoff()
+	_test_botan_midrun_reward_breaks_kill_zone_cover_reload_loop()
 	_test_azki_midrun_reward_does_not_repeat_existing_payoff()
+	_test_azki_midrun_reward_recovers_after_laplus_payoff_stack()
 	_test_reward_draft_fills_missing_role_gaps()
 
 	if failures.is_empty():
@@ -146,6 +148,20 @@ func _test_botan_midrun_reward_limits_repeat_rare_payoff() -> void:
 	_expect_false(result.has("botan-perfect-line"), "Botan 已有多張 perfect-line 時不應繼續推重複 rare payoff")
 	_expect_true(result.has("botan-clean-scope") or result.has("botan-overwatch") or result.has("botan-fortified-cover") or result.has("botan-counter-line"), "Botan mid-run reward 應補防守或反擊橋接")
 
+func _test_botan_midrun_reward_breaks_kill_zone_cover_reload_loop() -> void:
+	var pool := _botan_pool()
+	var deck_ids := [
+		"botan-shot", "botan-shot", "botan-shot", "botan-shot",
+		"botan-cover", "botan-cover", "botan-cover", "botan-burst", "botan-reload", "botan-mark",
+		"botan-kill-zone", "botan-cover-reload", "botan-perfect-line",
+		"botan-kill-zone", "botan-cover-reload", "botan-kill-zone"
+	]
+	var result: Array[String] = drafter.draft(database, pool, deck_ids, [], 3, 11, 202605251)
+
+	_expect_false(result.has("botan-kill-zone"), "Botan 已有多張 kill-zone 時不應繼續推同名 setup")
+	_expect_false(result.has("botan-cover-reload"), "Botan 已有多張 cover-reload 時不應繼續推同名橋接")
+	_expect_true(result.has("botan-overwatch") or result.has("botan-clean-scope") or result.has("botan-flashbang-round") or result.has("botan-fortified-cover") or result.has("botan-counter-line"), "Botan setup/bridge 已過量時，reward 應改補控制、防守或反擊")
+
 func _test_azki_midrun_reward_does_not_repeat_existing_payoff() -> void:
 	var pool := _azki_pool()
 	var deck_ids := [
@@ -157,7 +173,20 @@ func _test_azki_midrun_reward_does_not_repeat_existing_payoff() -> void:
 	var result: Array[String] = drafter.draft(database, pool, deck_ids, [], 3, 11, 2026051343)
 
 	_expect_false(result.has("azki-laplus-overflow") or result.has("azki-necrobinder-finale"), "AZKi 已有 Laplus payoff 時不應繼續重複塞同名收束牌")
-	_expect_true(result.has("azki-laplus-cover") or result.has("azki-laplus-reposition") or result.has("azki-safe-route") or result.has("azki-laplus-combo"), "AZKi 已有 payoff 後 reward 應補防守橋接或不同收束")
+	_expect_true(result.has("azki-laplus-cover") or result.has("azki-laplus-reposition") or result.has("azki-safe-route") or result.has("azki-laplus-combo") or result.has("azki-phantom-route") or result.has("azki-necro-recall"), "AZKi 已有 payoff 後 reward 應補防守橋接、臨時 marker、回收或不同收束")
+
+func _test_azki_midrun_reward_recovers_after_laplus_payoff_stack() -> void:
+	var pool := _azki_pool()
+	var deck_ids := [
+		"azki-map-shot", "azki-map-shot", "azki-map-shot",
+		"azki-guard", "azki-guard", "azki-guard", "azki-pinpoint", "azki-tune-up", "azki-kiss",
+		"azki-laplus-guard-order", "azki-laplus-contract", "azki-dark-tether", "azki-safe-route",
+		"azki-laplus-overflow", "azki-necrobinder-finale", "azki-laplus-release"
+	]
+	var result: Array[String] = drafter.draft(database, pool, deck_ids, [], 3, 13, 202605252)
+
+	_expect_false(result.has("azki-laplus-overflow") or result.has("azki-necrobinder-finale") or result.has("azki-laplus-release"), "AZKi 已有多張 Laplus payoff 時不應繼續推同類收束")
+	_expect_true(result.has("azki-phantom-route") or result.has("azki-necro-recall") or result.has("azki-laplus-cover") or result.has("azki-laplus-reposition"), "AZKi 已有 payoff 後應補 Laplus 防守、臨時 marker 或回收穩定度")
 
 func _test_reward_draft_fills_missing_role_gaps() -> void:
 	var subaru_no_payoff_deck := [

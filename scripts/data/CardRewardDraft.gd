@@ -127,6 +127,7 @@ func _card_score(card: Dictionary, deck_signal: Dictionary, floor: int) -> float
 	score += float(_archetype_score(card, deck_signal)) * 18.0
 	score += _subaru_midrun_tempo_block_bonus(card, deck_signal, floor)
 	score += _botan_midrun_guard_bonus(card, deck_signal, floor)
+	score += _botan_depth_balance_bonus(card, deck_signal, floor)
 	score += _azki_early_survival_bonus(card, deck_signal, floor)
 	score += _azki_chapter_2_consistency_bonus(card, deck_signal, floor)
 	score += _azki_midrun_payoff_bonus(card, deck_signal, floor)
@@ -192,6 +193,30 @@ func _botan_midrun_guard_bonus(card: Dictionary, deck_signal: Dictionary, floor:
 		return 24.0
 	return 0.0
 
+func _botan_depth_balance_bonus(card: Dictionary, deck_signal: Dictionary, floor: int) -> float:
+	if floor < 7 or str(card.get("character", "")) != "botan":
+		return 0.0
+	var card_id := str(card.get("id", ""))
+	var existing_copies := int(deck_signal.get("card:%s" % card_id, 0))
+	if card_id in ["botan-kill-zone", "botan-cover-reload"] and existing_copies >= 2:
+		return -180.0
+	if card_id == "botan-perfect-line" and existing_copies >= 1:
+		return -120.0
+	var repeated_setup_bridge := _botan_repeated_setup_bridge_count(deck_signal)
+	if repeated_setup_bridge < 4:
+		return 0.0
+	if card_id in ["botan-overwatch", "botan-clean-scope", "botan-fortified-cover", "botan-counter-line", "botan-flashbang-round", "botan-precise-cover"]:
+		return 96.0
+	if _has_any_role(card, ["defense"]) and existing_copies == 0:
+		return 42.0
+	return 0.0
+
+func _botan_repeated_setup_bridge_count(deck_signal: Dictionary) -> int:
+	var count := 0
+	for card_id in ["botan-kill-zone", "botan-cover-reload", "botan-perfect-line"]:
+		count += int(deck_signal.get("card:%s" % card_id, 0))
+	return count
+
 func _azki_early_survival_bonus(card: Dictionary, deck_signal: Dictionary, floor: int) -> float:
 	if floor > 5:
 		return 0.0
@@ -208,6 +233,8 @@ func _azki_early_survival_bonus(card: Dictionary, deck_signal: Dictionary, floor
 		return 34.0
 	if card_id == "azki-safe-route":
 		return 28.0
+	if card_id == "azki-phantom-route":
+		return 30.0
 	if card.get("archetype_tags", []).has("laplus_guard") and _has_any_role(card, SURVIVAL_ROLES):
 		return 24.0
 	return 0.0
@@ -237,12 +264,12 @@ func _azki_midrun_payoff_bonus(card: Dictionary, deck_signal: Dictionary, floor:
 	if int(deck_signal.get("laplus_guard", 0)) < 2 or int(deck_signal.get("marker_loop", 0)) < 2:
 		return 0.0
 	var card_id := str(card.get("id", ""))
-	if card_id in ["azki-laplus-overflow", "azki-necrobinder-finale", "azki-laplus-crash", "azki-laplus-combo"]:
+	if _azki_existing_laplus_payoff_count(deck_signal) >= 2 and card_id in ["azki-laplus-cover", "azki-laplus-reposition", "azki-safe-route", "azki-coordinate-shield", "azki-phantom-route", "azki-necro-recall", "azki-laplus-guard-order", "azki-laplus-contract", "azki-dark-tether"]:
+		return 138.0
+	if card_id in ["azki-laplus-overflow", "azki-necrobinder-finale", "azki-laplus-crash", "azki-laplus-combo", "azki-laplus-release"]:
 		if int(deck_signal.get("card:%s" % card_id, 0)) >= 1:
 			return -95.0
 		return 74.0
-	if _azki_existing_laplus_payoff_count(deck_signal) >= 2 and card_id in ["azki-laplus-cover", "azki-laplus-reposition", "azki-safe-route", "azki-coordinate-shield", "azki-laplus-combo"]:
-		return 118.0
 	if card.get("role_tags", []).has("payoff") or card.get("role_tags", []).has("scaling"):
 		return 48.0
 	if int(deck_signal.get("card:%s" % card_id, 0)) >= 1 and _has_any_role(card, ["bridge", "setup"]):
@@ -251,7 +278,7 @@ func _azki_midrun_payoff_bonus(card: Dictionary, deck_signal: Dictionary, floor:
 
 func _azki_existing_laplus_payoff_count(deck_signal: Dictionary) -> int:
 	var count := 0
-	for card_id in ["azki-laplus-overflow", "azki-necrobinder-finale", "azki-laplus-crash", "azki-laplus-combo"]:
+	for card_id in ["azki-laplus-overflow", "azki-necrobinder-finale", "azki-laplus-crash", "azki-laplus-combo", "azki-laplus-release"]:
 		count += int(deck_signal.get("card:%s" % card_id, 0))
 	return count
 

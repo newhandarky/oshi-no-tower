@@ -254,6 +254,8 @@ func _auto_play_card_score(app: Node, card: Dictionary) -> float:
 	for effect_variant in card.get("effects", []):
 		var effect: Dictionary = effect_variant
 		score += _auto_play_effect_score(effect, enemy_attacking)
+	if int(app.combat.next_attack_bonus) > 0 and str(card.get("kind", "")) == "attack":
+		score += float(int(app.combat.next_attack_bonus)) * 5.5
 	if str(card.get("kind", "")) == "attack":
 		score += 4.0
 	if str(card.get("kind", "")) == "support":
@@ -269,6 +271,17 @@ func _auto_play_effect_score(effect: Dictionary, enemy_attacking: bool) -> float
 			return float(int(effect.get("amount", 0))) * (2.0 if enemy_attacking else 0.35)
 		"draw":
 			return float(int(effect.get("amount", 0))) * 4.0
+		"draw_from_discard":
+			return float(int(effect.get("amount", 1))) * 6.5
+		"next_attack_bonus":
+			return float(int(effect.get("amount", 0))) * 5.0
+		"temporary_card":
+			var temp_card: Dictionary = effect.get("card", {})
+			var temp_score := 6.0
+			for nested_variant in temp_card.get("effects", []):
+				var nested: Dictionary = nested_variant
+				temp_score += _auto_play_effect_score(nested, enemy_attacking) * 0.65
+			return temp_score
 		"draw_if_status":
 			return float(int(effect.get("amount", 0))) * 3.0
 		"energy":
