@@ -44,9 +44,9 @@ func try_play_card(state, hand_index: int) -> bool:
 	for effect in card["effects"]:
 		_resolve_effect(state, effect, card)
 	if bool(card.get("exhaust_on_play", false)) or _card_has_effect_type(card, "exhaust_on_play"):
-		state.exhaust_pile.append(card)
+		state.exhaust_pile.append(_clear_runtime_card_flags(card))
 	else:
-		state.discard_pile.append(card)
+		state.discard_pile.append(_clear_runtime_card_flags(card))
 
 	if state.enemy_hp <= 0:
 		state.enemy_hp = 0
@@ -126,7 +126,7 @@ func draw_cards(state, amount: int) -> void:
 			state.discard_pile.clear()
 		if state.draw_pile.is_empty():
 			return
-		var card: Dictionary = state.draw_pile.pop_front()
+		var card: Dictionary = _clear_runtime_card_flags(state.draw_pile.pop_front())
 		state.hand.append(card)
 		_apply_drawn_card_effect(state, card)
 
@@ -159,13 +159,13 @@ func _move_end_turn_hand_cards(state) -> void:
 	for card_variant in state.hand:
 		var card: Dictionary = card_variant
 		if bool(card.get("ethereal", false)):
-			state.exhaust_pile.append(card)
+			state.exhaust_pile.append(_clear_runtime_card_flags(card))
 		elif bool(card.get("retain", false)):
 			var retained_card := card.duplicate(true)
 			retained_card["_retained_from_previous_turn"] = true
 			retained_cards.append(retained_card)
 		else:
-			state.discard_pile.append(card)
+			state.discard_pile.append(_clear_runtime_card_flags(card))
 	state.hand.clear()
 	state.hand.append_array(retained_cards)
 
@@ -470,11 +470,13 @@ func _resolve_enemy_action(state) -> void:
 		pre_enemy_status_ids.append(str(status_id))
 	if action_type == "attack" or action_type == "attack_block":
 		var damage := int(action["damage"])
-		damage = _modified_outgoing_damage(state, "enemy", damage)
-		damage = _modified_incoming_damage(state, "player", damage)
-		var unblocked: int = max(0, damage - state.player_block)
-		state.player_block = max(0, state.player_block - damage)
-		_damage_player_or_summon(state, unblocked)
+		var hits: int = max(1, int(action.get("hits", 1)))
+		for _i in range(hits):
+			var hit_damage := _modified_outgoing_damage(state, "enemy", damage)
+			hit_damage = _modified_incoming_damage(state, "player", hit_damage)
+			var unblocked: int = max(0, hit_damage - state.player_block)
+			state.player_block = max(0, state.player_block - hit_damage)
+			_damage_player_or_summon(state, unblocked)
 
 	if action_type == "block" or action_type == "attack_block":
 		state.enemy_block += int(action["block"])
@@ -512,6 +514,11 @@ func _damage_player_or_summon(state, amount: int) -> void:
 			state.last_summon_defeated = true
 	if amount > 0:
 		state.player_hp = max(0, state.player_hp - amount)
+
+func _clear_runtime_card_flags(card: Dictionary) -> Dictionary:
+	var cleaned := card.duplicate(true)
+	cleaned.erase("_retained_from_previous_turn")
+	return cleaned
 
 func _apply_turn_start_statuses(state, target: String) -> void:
 	var statuses: Dictionary = state.player_statuses if target == "player" else state.enemy_statuses

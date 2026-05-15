@@ -121,7 +121,7 @@ func _init() -> void:
 			"identity_hint": "2 費爆發與瞄準收頭，適合先控場再打大傷害。",
 			"identity_focus_tags": ["two_cost_burst", "setup_control", "precision_finish"],
 			"signature_card_ids": ["botan-heavy-shot", "botan-funds-prepared"],
-			"max_hp": 74,
+			"max_hp": 80,
 			"starting_gold": 65,
 			"passive": {
 				"id": "botan-sniper-opening",
@@ -144,7 +144,7 @@ func _init() -> void:
 			"identity_hint": "先疊標記再追擊，靠標記轉成額外傷害與抽牌節奏。",
 			"identity_focus_tags": ["marker_setup", "marker_payoff", "exploration_draw"],
 			"signature_card_ids": ["azki-map-search", "azki-open-route"],
-			"max_hp": 70,
+			"max_hp": 76,
 			"starting_gold": 65,
 			"passive": {
 				"id": "azki-pioneer-coordinate",
@@ -205,14 +205,14 @@ func _init() -> void:
 		{ "id": "botan-tap-shot", "name": "輕點射擊", "cost": 1, "kind": "attack", "animation": "pistol_attack", "description": "造成 9 點傷害。", "effects": [{ "type": "damage", "amount": 9, "hits": 1 }] },
 		{ "id": "botan-suppressive-fire", "name": "壓制射擊", "cost": 1, "kind": "attack", "animation": "pistol_attack", "description": "造成 6 點傷害，給予 2 回合虛弱。", "effects": [{ "type": "damage", "amount": 6, "hits": 1 }, { "type": "status", "target": "enemy", "status_id": "weak", "amount": 1, "value": 1, "duration": 2 }] },
 		{ "id": "botan-tactical-focus", "name": "戰術專注", "cost": 1, "kind": "support", "animation": "idle", "description": "獲得 1 層力量，抽 1 張牌。", "effects": [{ "type": "status", "target": "player", "status_id": "strength", "amount": 1, "value": 1, "duration": 99 }, { "type": "draw", "amount": 1 }] },
-		{ "id": "botan-medkit-cover", "name": "醫療掩體", "cost": 1, "kind": "mixed", "animation": "defense", "description": "獲得 6 點格擋與 2 回合回復 1。", "effects": [{ "type": "block", "amount": 6 }, { "type": "status", "target": "player", "status_id": "regen", "amount": 1, "value": 1, "duration": 2 }] },
+		{ "id": "botan-medkit-cover", "name": "醫療掩體", "cost": 1, "kind": "mixed", "animation": "defense", "description": "獲得 7 點格擋與 2 回合回復 2。", "effects": [{ "type": "block", "amount": 7 }, { "type": "status", "target": "player", "status_id": "regen", "amount": 2, "value": 2, "duration": 2 }] },
 		{ "id": "botan-button-check", "name": "Button Check", "cost": 1, "kind": "attack", "animation": "pistol_attack", "description": "造成 6 點傷害，給予 2 回合虛弱。", "effects": [{ "type": "damage", "amount": 6, "hits": 1 }, { "type": "status", "target": "enemy", "status_id": "weak", "amount": 1, "value": 1, "duration": 2 }] },
-		{ "id": "botan-clean-scope", "name": "Clean Scope", "cost": 1, "kind": "defense", "animation": "defense", "description": "獲得 8 點格擋，抽 1 張牌。", "effects": [{ "type": "block", "amount": 8 }, { "type": "draw", "amount": 1 }] },
+		{ "id": "botan-clean-scope", "name": "Clean Scope", "cost": 1, "kind": "defense", "animation": "defense", "description": "獲得 9 點格擋，抽 1 張牌。", "effects": [{ "type": "block", "amount": 9 }, { "type": "draw", "amount": 1 }] },
 		{ "id": "botan-calm-burst", "name": "冷靜爆發", "cost": 2, "kind": "attack", "animation": "sniper_ultimate", "description": "造成 10 點傷害 2 次，給予 2 回合易傷。", "effects": [{ "type": "damage", "amount": 10, "hits": 2 }, { "type": "status", "target": "enemy", "status_id": "vulnerable", "amount": 1, "value": 1, "duration": 2 }] },
 		{ "id": "botan-precise-cover", "name": "精準掩護", "cost": 1, "kind": "mixed", "animation": "defense", "description": "獲得 10 點格擋，獲得 1 層力量。", "effects": [{ "type": "block", "amount": 10 }, { "type": "status", "target": "player", "status_id": "strength", "amount": 1, "value": 1, "duration": 99 }] },
 		{ "id": "botan-funds-prepared", "name": "Funds Prepared", "cost": 0, "kind": "support", "animation": "idle", "description": "獲得 1 點能量，抽 1 張牌，給予 2 回合易傷。", "effects": [{ "type": "energy", "amount": 1 }, { "type": "draw", "amount": 1 }, { "type": "status", "target": "enemy", "status_id": "vulnerable", "amount": 1, "value": 1, "duration": 2 }] },
 		{ "id": "botan-range-finder", "name": "測距儀", "cost": 0, "kind": "support", "animation": "idle", "description": "抽 1 張牌，給予 1 回合易傷。", "rarity": "common", "floor_band": "early", "archetype_tags": ["two_cost_burst", "precision_control"], "role_tags": ["setup", "bridge"], "art_status": "prototype_placeholder", "art_path": "", "upgrade_plan": "升級延長易傷，讓 2 費爆發可以隔回合安排。", "upgrade_description": "抽 1 張牌，給予 2 回合易傷。", "effects": [{ "type": "draw", "amount": 1 }, { "type": "status", "target": "enemy", "status_id": "vulnerable", "amount": 1, "value": 1, "duration": 1 }], "upgrade_effects": [{ "type": "draw", "amount": 1 }, { "type": "status", "target": "enemy", "status_id": "vulnerable", "amount": 1, "value": 1, "duration": 2 }] },
-		{ "id": "botan-overwatch", "name": "架槍監視", "cost": 1, "kind": "mixed", "animation": "pistol_attack", "description": "獲得 8 點格擋。若敵人準備攻擊，造成 6 點傷害。Retain。", "rarity": "common", "floor_band": "early", "archetype_tags": ["fortress_counter", "precision_control"], "role_tags": ["defense", "payoff"], "retain": true, "art_status": "prototype_placeholder", "art_path": "", "upgrade_plan": "升級提高防守與反擊傷害，讓攻擊意圖成為 Botan 的反擊窗口。", "upgrade_description": "獲得 11 點格擋。若敵人準備攻擊，造成 8 點傷害。Retain。", "effects": [{ "type": "block", "amount": 8 }, { "type": "conditional", "condition": { "enemy_intents": ["attack", "attack_block"] }, "effects": [{ "type": "damage", "amount": 6, "hits": 1 }] }], "upgrade_effects": [{ "type": "block", "amount": 11 }, { "type": "conditional", "condition": { "enemy_intents": ["attack", "attack_block"] }, "effects": [{ "type": "damage", "amount": 8, "hits": 1 }] }] },
+		{ "id": "botan-overwatch", "name": "架槍監視", "cost": 1, "kind": "mixed", "animation": "pistol_attack", "description": "獲得 9 點格擋。若敵人準備攻擊，造成 6 點傷害。Retain。", "rarity": "common", "floor_band": "early", "archetype_tags": ["fortress_counter", "precision_control"], "role_tags": ["defense", "payoff"], "retain": true, "art_status": "prototype_placeholder", "art_path": "", "upgrade_plan": "升級提高防守與反擊傷害，讓攻擊意圖成為 Botan 的反擊窗口。", "upgrade_description": "獲得 12 點格擋。若敵人準備攻擊，造成 8 點傷害。Retain。", "effects": [{ "type": "block", "amount": 9 }, { "type": "conditional", "condition": { "enemy_intents": ["attack", "attack_block"] }, "effects": [{ "type": "damage", "amount": 6, "hits": 1 }] }], "upgrade_effects": [{ "type": "block", "amount": 12 }, { "type": "conditional", "condition": { "enemy_intents": ["attack", "attack_block"] }, "effects": [{ "type": "damage", "amount": 8, "hits": 1 }] }] },
 		{ "id": "botan-piercing-round", "name": "穿甲彈", "cost": 2, "kind": "attack", "animation": "sniper_ultimate", "description": "造成 14 點傷害。若敵人有易傷，額外造成 8 點傷害。", "rarity": "uncommon", "floor_band": "mid", "archetype_tags": ["two_cost_burst", "precision_control"], "role_tags": ["payoff"], "art_status": "prototype_placeholder", "art_path": "", "upgrade_plan": "升級提高主傷與易傷 payoff，強化 setup 後的收頭感。", "upgrade_description": "造成 17 點傷害。若敵人有易傷，額外造成 10 點傷害。", "effects": [{ "type": "damage", "amount": 14, "hits": 1 }, { "type": "conditional", "condition": { "target_status": { "target": "enemy", "status_id": "vulnerable" } }, "effects": [{ "type": "damage", "amount": 8, "hits": 1 }] }], "upgrade_effects": [{ "type": "damage", "amount": 17, "hits": 1 }, { "type": "conditional", "condition": { "target_status": { "target": "enemy", "status_id": "vulnerable" } }, "effects": [{ "type": "damage", "amount": 10, "hits": 1 }] }] },
 		{ "id": "botan-perfect-line", "name": "完美彈道", "cost": 2, "kind": "attack", "animation": "sniper_ultimate", "description": "造成 22 點傷害。若你有至少 10 點格擋，抽 2 張牌。", "rarity": "rare", "floor_band": "late", "archetype_tags": ["two_cost_burst", "fortress_counter"], "role_tags": ["payoff", "scaling"], "art_status": "prototype_placeholder", "art_path": "", "upgrade_plan": "升級提高高費爆發並補能量，讓防守後的精準回合可以延伸。", "upgrade_description": "造成 26 點傷害。若你有至少 10 點格擋，抽 2 張牌並獲得 1 點能量。", "effects": [{ "type": "damage", "amount": 22, "hits": 1 }, { "type": "conditional", "condition": { "player_block_at_least": 10 }, "effects": [{ "type": "draw", "amount": 2 }] }], "upgrade_effects": [{ "type": "damage", "amount": 26, "hits": 1 }, { "type": "conditional", "condition": { "player_block_at_least": 10 }, "effects": [{ "type": "draw", "amount": 2 }, { "type": "energy", "amount": 1 }] }] },
 		{ "id": "azki-map-shot", "name": "座標彈", "cost": 1, "kind": "attack", "animation": "map_marker_attack", "description": "造成 7 點傷害。", "effects": [{ "type": "damage", "amount": 7, "hits": 1 }] },
@@ -257,7 +257,7 @@ func _init() -> void:
 		{ "id": "ssrb-glitch", "display_name": "SSRB Glitch", "encounter_tier": "mid", "max_hp": 50, "gold": 32, "scale": 1.0, "resource_base_path": "res://assets/enemies/ssrb/camouflage/", "actions": [{ "type": "debuff", "damage": 0, "block": 0, "description": "雜訊：虛弱 2", "status_id": "weak", "status_value": 1, "status_duration": 2 }, { "type": "attack_block", "damage": 12, "block": 6, "description": "雜訊衝撞 12 + 防禦 6" }] },
 		{ "id": "ssrb-guard-tutor", "display_name": "SSRB Guard Tutor", "encounter_tier": "early", "max_hp": 48, "gold": 32, "scale": 1.0, "resource_base_path": "res://assets/enemies/ssrb/camouflage/", "pressure_tags": ["anti_burst_into_block"], "tests_archetypes": ["two_cost_burst", "marker_loop", "cheap_chain"], "counterplay_hint": "高防禦回合不要把 2 費爆發打進護甲，先用 setup、抽牌或低費橋接。", "actions": [{ "type": "block", "damage": 0, "block": 18, "description": "教學防禦 18" }, { "type": "attack", "damage": 10, "block": 0, "description": "反打 10" }] },
 		{ "id": "ssrb-striker-intent", "display_name": "SSRB Striker Intent", "encounter_tier": "mid", "max_hp": 60, "gold": 38, "scale": 1.0, "resource_base_path": "res://assets/enemies/ssrb/white/", "pressure_tags": ["attack_intent_test"], "tests_archetypes": ["tempo_block", "fortress_counter", "laplus_guard"], "counterplay_hint": "攻擊意圖明確時優先防守，保留反擊或 enemy_intent 條件牌。", "actions": [{ "type": "attack", "damage": 18, "block": 0, "description": "突進 18" }, { "type": "attack_block", "damage": 12, "block": 6, "description": "壓制 12 + 防禦 6" }] },
-		{ "id": "ssrb-debuff-check", "display_name": "SSRB Debuff Check", "encounter_tier": "late", "max_hp": 66, "gold": 40, "scale": 1.0, "resource_base_path": "res://assets/enemies/ssrb/camouflage/", "pressure_tags": ["debuff_resilience"], "tests_archetypes": ["precision_control", "route_explore", "tempo_block"], "counterplay_hint": "易傷與虛弱會降低回合品質，先穩住血線再把 payoff 留給乾淨回合。", "actions": [{ "type": "debuff", "damage": 0, "block": 0, "description": "壓力標籤：易傷 2", "status_id": "vulnerable", "status_value": 1, "status_duration": 2 }, { "type": "attack", "damage": 20, "block": 0, "description": "追擊 20" }, { "type": "debuff", "damage": 0, "block": 0, "description": "節奏干擾：虛弱 2", "status_id": "weak", "status_value": 1, "status_duration": 2 }] },
+		{ "id": "ssrb-debuff-check", "display_name": "SSRB Debuff Check", "encounter_tier": "late", "max_hp": 66, "gold": 40, "scale": 1.0, "resource_base_path": "res://assets/enemies/ssrb/camouflage/", "pressure_tags": ["debuff_resilience"], "tests_archetypes": ["precision_control", "route_explore", "tempo_block"], "counterplay_hint": "易傷與虛弱會降低回合品質，先穩住血線再把 payoff 留給乾淨回合。", "actions": [{ "type": "debuff", "damage": 0, "block": 0, "description": "壓力標籤：易傷 2", "status_id": "vulnerable", "status_value": 1, "status_duration": 2 }, { "type": "attack", "damage": 17, "block": 0, "description": "追擊 17" }, { "type": "debuff", "damage": 0, "block": 0, "description": "節奏干擾：虛弱 2", "status_id": "weak", "status_value": 1, "status_duration": 2 }] },
 		{ "id": "ssrb-scaling-clock", "display_name": "菁英 SSRB Scaling Clock", "max_hp": 112, "gold": 70, "tier": "elite", "elite_tier": "late", "scale": 0.94, "resource_base_path": "res://assets/enemies/ssrb/gray/", "secondary_resource_base_path": "res://assets/enemies/ssrb/white/", "pressure_tags": ["scaling_clock"], "tests_archetypes": ["multi_hit_strength", "two_cost_burst", "marker_loop"], "counterplay_hint": "敵人會持續累積力量，拖太久會失控；需要 scaling 或集中爆發窗口。", "actions": [{ "type": "buff", "damage": 0, "block": 0, "description": "倒數強化：力量 +2", "status_id": "strength", "status_value": 2, "status_duration": 99 }, { "type": "attack", "damage": 18, "block": 0, "description": "時鐘重擊 18" }, { "type": "attack_block", "damage": 20, "block": 12, "description": "壓線 20 + 防禦 12" }] },
 		{ "id": "ssrb-duo-gray-camouflage", "display_name": "菁英 SSRB Duo: Gray + Camouflage", "max_hp": 92, "gold": 55, "tier": "elite", "elite_tier": "mid", "scale": 0.92, "resource_base_path": "res://assets/enemies/ssrb/gray/", "secondary_resource_base_path": "res://assets/enemies/ssrb/camouflage/", "actions": [{ "type": "attack", "damage": 18, "block": 0, "description": "雙重衝撞 18" }, { "type": "attack_block", "damage": 14, "block": 10, "description": "交互掩護 14 + 防禦 10" }] },
 		{ "id": "ssrb-duo-gray-white", "display_name": "菁英 SSRB Duo: Gray + White", "max_hp": 98, "gold": 58, "tier": "elite", "elite_tier": "mid", "scale": 0.92, "resource_base_path": "res://assets/enemies/ssrb/gray/", "secondary_resource_base_path": "res://assets/enemies/ssrb/white/", "actions": [{ "type": "attack", "damage": 19, "block": 0, "description": "雙重衝撞 19" }, { "type": "block", "damage": 0, "block": 16, "description": "雙層防線 16" }, { "type": "attack_block", "damage": 15, "block": 9, "description": "推進 15 + 防禦 9" }] },
@@ -266,7 +266,7 @@ func _init() -> void:
 		{ "id": "youtube-kun", "display_name": "YouTube-kun", "encounter_tier": "mid", "max_hp": 56, "gold": 38, "scale": 1.0, "content_group": "meme_enemy", "resource_base_path": "res://assets/enemies/ssrb/camouflage/", "actions": [{ "type": "debuff", "damage": 0, "block": 0, "description": "技術事故：虛弱 2", "status_id": "weak", "status_value": 1, "status_duration": 2 }, { "type": "attack_block", "damage": 13, "block": 8, "description": "轉圈緩衝 13 + 防禦 8" }] },
 		{ "id": "desk-kun", "display_name": "Desk-kun", "encounter_tier": "early", "max_hp": 52, "gold": 34, "scale": 1.0, "content_group": "meme_enemy", "resource_base_path": "res://assets/enemies/ssrb/gray/", "actions": [{ "type": "attack", "damage": 11, "block": 0, "description": "桌面震動 11" }, { "type": "attack_block", "damage": 9, "block": 11, "description": "硬撐 9 + 防禦 11" }] },
 		{ "id": "korone-suki", "display_name": "ころね好き", "encounter_tier": "mid", "max_hp": 54, "gold": 36, "scale": 1.0, "content_group": "meme_enemy", "resource_base_path": "res://assets/enemies/korone_suki/", "actions": [{ "type": "attack", "damage": 12, "block": 0, "description": "咬咬衝撞 12" }, { "type": "debuff", "damage": 0, "block": 0, "description": "執著視線：虛弱 2", "status_id": "weak", "status_value": 1, "status_duration": 2 }, { "type": "attack_block", "damage": 8, "block": 8, "description": "貼身糾纏 8 + 防禦 8" }] },
-		{ "id": "announcement-shadow", "display_name": "Announcement Shadow", "encounter_tier": "late", "max_hp": 64, "gold": 42, "scale": 1.0, "content_group": "meme_enemy", "resource_base_path": "res://assets/enemies/ssrb/white/", "actions": [{ "type": "block", "damage": 0, "block": 14, "description": "倒數預告 14" }, { "type": "debuff", "damage": 0, "block": 0, "description": "壓力：易傷 2", "status_id": "vulnerable", "status_value": 1, "status_duration": 2 }, { "type": "attack", "damage": 22, "block": 0, "description": "重大重擊 22" }] },
+		{ "id": "announcement-shadow", "display_name": "Announcement Shadow", "encounter_tier": "late", "max_hp": 64, "gold": 42, "scale": 1.0, "content_group": "meme_enemy", "resource_base_path": "res://assets/enemies/ssrb/white/", "actions": [{ "type": "block", "damage": 0, "block": 14, "description": "倒數預告 14" }, { "type": "debuff", "damage": 0, "block": 0, "description": "壓力：易傷 2", "status_id": "vulnerable", "status_value": 1, "status_duration": 2 }, { "type": "attack", "damage": 14, "block": 0, "description": "重大重擊 14" }] },
 		{ "id": "ak-idol-unit", "display_name": "AK Idol Unit", "max_hp": 108, "gold": 68, "tier": "elite", "elite_tier": "late", "scale": 0.92, "content_group": "meme_enemy", "resource_base_path": "res://assets/enemies/ssrb/gray/", "secondary_resource_base_path": "res://assets/enemies/ssrb/white/", "actions": [{ "type": "attack", "damage": 20, "block": 0, "description": "偶像火力 20" }, { "type": "buff", "damage": 0, "block": 0, "description": "火力整隊：力量 +2", "status_id": "strength", "status_value": 2, "status_duration": 99 }, { "type": "attack_block", "damage": 18, "block": 12, "description": "舞台壓制 18 + 防禦 12" }] },
 		{ "id": "kedama-elite", "display_name": "毛玉", "max_hp": 100, "gold": 62, "tier": "elite", "elite_tier": "late", "scale": 1.05, "content_group": "meme_enemy", "resource_base_path": "res://assets/enemies/kedama/", "actions": [{ "type": "attack", "damage": 18, "block": 0, "description": "毛玉衝刺 18" }, { "type": "block", "damage": 0, "block": 16, "description": "毛玉護牆 16" }, { "type": "debuff", "damage": 0, "block": 0, "description": "纏住：易傷 2", "status_id": "vulnerable", "status_value": 1, "status_duration": 2 }, { "type": "attack_block", "damage": 14, "block": 8, "description": "翻滾夾擊 14 + 防禦 8" }] },
 		{ "id": "recommendation-watcher", "display_name": "Recommendation Watcher", "chapter_id": CHAPTER_2_ID, "encounter_tier": "early", "max_hp": 68, "gold": 44, "scale": 1.0, "resource_base_path": "res://assets/enemies/ssrb/camouflage/", "pressure_tags": ["anti_cycle", "debuff_pressure"], "tests_archetypes": ["cheap_chain", "marker_loop", "route_explore"], "counterplay_hint": "不要每回合都把手牌打空，保留爆發回合並讓連段換到實質 payoff。", "actions": [{ "type": "attack", "damage": 12, "block": 0, "description": "推薦監看 12" }, { "type": "debuff", "damage": 0, "block": 0, "description": "節奏審核：虛弱 2", "status_id": "weak", "status_value": 1, "status_duration": 2 }, { "type": "attack_block", "damage": 9, "block": 8, "description": "演算法回推 9 + 防禦 8" }] },
@@ -284,7 +284,7 @@ func _init() -> void:
 		{ "id": "ssrb-giant-gray", "display_name": "巨大 SSRB Gray", "max_hp": 118, "gold": 0, "scale": 1.5, "is_boss": true, "boss_danger_tag": "直傷壓迫", "boss_pattern": "直傷起手，接力量 buff，再用高傷攻防重擊收尾。", "boss_counterplay": "看到 buff 回合時優先補防或準備爆發，避免被 26 傷重擊直接穿透。", "boss_spike_turn": 3, "resource_base_path": "res://assets/enemies/ssrb/gray/", "actions": [{ "type": "attack", "damage": 18, "block": 0, "description": "衝撞 18" }, { "type": "buff", "damage": 0, "block": 0, "description": "巨大化：力量 +3", "status_id": "strength", "status_value": 3, "status_duration": 99 }, { "type": "attack_block", "damage": 26, "block": 8, "description": "爆炸衝撞 26 + 防禦 8" }] },
 		{ "id": "ssrb-giant-camouflage", "display_name": "巨大 SSRB Camouflage", "max_hp": 120, "gold": 0, "scale": 1.5, "is_boss": true, "boss_danger_tag": "硬化循環", "boss_pattern": "普通攻擊後先堆高格擋，再進入高傷攻防循環。", "boss_counterplay": "不要把大招丟在硬化回合，等防禦結束再集中輸出。", "boss_spike_turn": 3, "resource_base_path": "res://assets/enemies/ssrb/camouflage/", "actions": [{ "type": "attack", "damage": 18, "block": 0, "description": "衝撞 18" }, { "type": "block", "damage": 0, "block": 18, "description": "硬化 18" }, { "type": "attack_block", "damage": 26, "block": 8, "description": "爆炸衝撞 26 + 防禦 8" }] },
 		{ "id": "ssrb-giant-white", "display_name": "巨大 SSRB White", "max_hp": 122, "gold": 0, "scale": 1.5, "is_boss": true, "boss_danger_tag": "高防反打", "boss_pattern": "用高格擋撐住，再以更高數值的攻防重擊反打。", "boss_counterplay": "如果當回合打不穿護甲，優先轉防守，不要硬換血。", "boss_spike_turn": 3, "resource_base_path": "res://assets/enemies/ssrb/white/", "actions": [{ "type": "attack", "damage": 18, "block": 0, "description": "衝撞 18" }, { "type": "block", "damage": 0, "block": 20, "description": "硬化 20" }, { "type": "attack_block", "damage": 27, "block": 8, "description": "爆炸衝撞 27 + 防禦 8" }] },
-		{ "id": "subaruto-duck", "display_name": "スバルトダック", "max_hp": 112, "gold": 0, "scale": 1.5, "is_boss": true, "boss_danger_tag": "干擾節奏", "boss_pattern": "普通攻擊後接虛弱干擾，再切回攻防混合壓迫玩家節奏。", "boss_counterplay": "被掛虛弱後不要硬拼輸出，先把手牌品質和防守補回來。", "boss_spike_turn": 3, "resource_base_path": "res://assets/enemies/subaruto_duck/", "fallback_resource_base_path": "res://assets/enemies/ssrb/white/", "actions": [{ "type": "attack", "damage": 16, "block": 0, "description": "攻擊 16" }, { "type": "debuff", "damage": 0, "block": 0, "description": "鴨式干擾：虛弱 2", "status_id": "weak", "status_value": 1, "status_duration": 2 }, { "type": "attack_block", "damage": 24, "block": 8, "description": "攻擊 24 + 防禦 8" }] },
+		{ "id": "subaruto-duck", "display_name": "スバルトダック", "max_hp": 80, "gold": 0, "scale": 1.5, "is_boss": true, "boss_danger_tag": "干擾節奏", "boss_pattern": "普通攻擊後接虛弱干擾，再切回攻防混合壓迫玩家節奏。", "boss_counterplay": "被掛虛弱後不要硬拼輸出，先把手牌品質和防守補回來。", "boss_spike_turn": 3, "resource_base_path": "res://assets/enemies/subaruto_duck/", "fallback_resource_base_path": "res://assets/enemies/ssrb/white/", "actions": [{ "type": "attack", "damage": 10, "block": 0, "description": "攻擊 10" }, { "type": "debuff", "damage": 0, "block": 0, "description": "鴨式干擾：虛弱 2", "status_id": "weak", "status_value": 1, "status_duration": 2 }, { "type": "attack_block", "damage": 14, "block": 8, "description": "攻擊 14 + 防禦 8" }] },
 		{ "id": "youtube-kun-core", "display_name": "YouTube-kun Core", "max_hp": 124, "gold": 0, "scale": 1.5, "is_boss": true, "content_group": "meme_boss", "boss_danger_tag": "事故干擾", "boss_pattern": "先上虛弱干擾，再開高格擋緩衝，最後用高傷攻防一波壓回來。", "boss_counterplay": "看到緩衝防線時先保牌，不要把高費爆發浪費在 22 格擋上。", "boss_spike_turn": 3, "resource_base_path": "res://assets/enemies/ssrb/camouflage/", "actions": [{ "type": "debuff", "damage": 0, "block": 0, "description": "平台事故：虛弱 2", "status_id": "weak", "status_value": 1, "status_duration": 2 }, { "type": "block", "damage": 0, "block": 22, "description": "緩衝防線 22" }, { "type": "attack_block", "damage": 27, "block": 10, "description": "壓縮重擊 27 + 防禦 10" }] },
 		{ "id": "important-announcement", "display_name": "Important Announcement", "max_hp": 132, "gold": 0, "scale": 1.5, "is_boss": true, "content_group": "meme_boss", "boss_danger_tag": "蓄力爆發", "boss_pattern": "先倒數蓄力，再用易傷壓迫，最後進入 30 傷的大爆發回合。", "boss_counterplay": "倒數與易傷回合先守住血線，確保爆發回合前仍有格擋或減傷資源。", "boss_spike_turn": 3, "resource_base_path": "res://assets/enemies/ssrb/white/", "actions": [{ "type": "block", "damage": 0, "block": 24, "description": "重大告知倒數 24" }, { "type": "debuff", "damage": 0, "block": 0, "description": "全場屏息：易傷 2", "status_id": "vulnerable", "status_value": 1, "status_duration": 2 }, { "type": "attack", "damage": 30, "block": 0, "description": "壓力爆發 30" }] }
 	]
@@ -295,13 +295,13 @@ func _init() -> void:
 		{ "id": "energy-drink", "name": "開場能量飲", "description": "戰鬥開始時獲得 1 點能量。", "pool": "common", "source_rules": ["elite", "chest", "shop", "debug"], "hooks": ["combat_start"], "hook": "combat_start", "effect": "energy", "amount": 1 },
 		{ "id": "healing-chat", "name": "聊天室補給", "description": "每個玩家回合開始時回復 1 HP，持續整場戰鬥。", "pool": "event", "source_rules": ["event", "debug"], "hooks": ["turn_start"], "hook": "turn_start", "effect": "heal", "amount": 1 },
 		{ "id": "golden-superchat", "name": "金色 Superchat", "description": "戰鬥獎勵額外獲得 10 Gold。", "pool": "common", "source_rules": ["elite", "chest", "event", "debug"], "hooks": ["battle_reward"], "hook": "battle_reward", "effect": "gold_bonus", "amount": 10 },
-		{ "id": "shop-coupon", "name": "商店折價券", "description": "商店移除卡與 relic 價格降低 10 Gold。", "pool": "shop", "source_rules": ["shop", "debug"], "hooks": ["shop_enter"], "hook": "shop_enter", "effect": "shop_discount", "amount": 10 },
+		{ "id": "shop-coupon", "name": "商店折價券", "description": "商店移除卡服務降低 10 Gold。", "pool": "shop", "source_rules": ["shop", "debug"], "hooks": ["shop_enter"], "hook": "shop_enter", "effect": "shop_discount", "amount": 10 },
 		{ "id": "route-stamp", "name": "推塔集章卡", "description": "進入非戰鬥房間時獲得 5 Gold。", "pool": "event", "source_rules": ["event", "chest", "debug"], "hooks": ["room_enter"], "hook": "room_enter", "effect": "room_gold", "amount": 5 },
 		{ "id": "boss-spotlight", "name": "終局聚光燈", "description": "Boss 戰開始時獲得 2 層力量。", "pool": "boss", "source_rules": ["boss", "debug"], "hooks": ["combat_start"], "hook": "combat_start", "effect": "strength", "amount": 2 },
 		{ "id": "yagoo-best-girl", "name": "YAGOO is Best Girl", "description": "進入非戰鬥房間時獲得 8 Gold。", "pool": "event", "source_rules": ["event", "boss", "debug"], "hooks": ["room_enter"], "hook": "room_enter", "effect": "room_gold", "amount": 8 },
 		{ "id": "shishiro-button", "name": "Shishiro Button", "description": "每場戰鬥第一次打出 2 費牌時，額外造成 5 點傷害。", "pool": "elite", "source_rules": ["elite", "chest", "debug"], "hooks": ["first_two_cost_played"], "hook": "first_two_cost_played", "effect": "bonus_damage", "amount": 5 },
 		{ "id": "superchat-reading", "name": "Superchat Reading", "description": "戰鬥獎勵額外獲得 12 Gold。", "pool": "common", "source_rules": ["elite", "chest", "event", "debug"], "hooks": ["battle_reward"], "hook": "battle_reward", "effect": "gold_bonus", "amount": 12 },
-		{ "id": "x-funds-wallet", "name": "X Funds Wallet", "description": "商店移除卡與 relic 價格降低 15 Gold。", "pool": "shop", "source_rules": ["shop", "debug"], "hooks": ["shop_enter"], "hook": "shop_enter", "effect": "shop_discount", "amount": 15 },
+		{ "id": "x-funds-wallet", "name": "X Funds Wallet", "description": "商店移除卡服務降低 15 Gold。", "pool": "shop", "source_rules": ["shop", "debug"], "hooks": ["shop_enter"], "hook": "shop_enter", "effect": "shop_discount", "amount": 15 },
 		{ "id": "ada-tv", "name": "Ada TV", "description": "進入非戰鬥房間時獲得 6 Gold。", "pool": "event", "source_rules": ["event", "chest", "debug"], "hooks": ["room_enter"], "hook": "room_enter", "effect": "room_gold", "amount": 6 },
 		{ "id": "pamomi-signal", "name": "Pamomi Signal", "description": "每個玩家回合開始時回復 1 HP。", "pool": "event", "source_rules": ["event", "debug"], "hooks": ["turn_start"], "hook": "turn_start", "effect": "heal", "amount": 1 },
 		{ "id": "blue-wave-badge", "name": "Blue Wave Badge", "description": "戰鬥開始時獲得 2 點格擋與 1 點能量。", "pool": "common", "source_rules": ["elite", "chest", "shop", "event", "debug"], "hooks": ["combat_start"], "hook": "combat_start", "effect": "energy", "amount": 1, "effects": [{ "effect": "block", "amount": 2 }, { "effect": "energy", "amount": 1 }] },
@@ -328,15 +328,33 @@ func _init() -> void:
 	_apply_v3_metadata()
 
 func get_character(id: String) -> Dictionary:
-	return characters.filter(func(item: Dictionary) -> bool: return item["id"] == id)[0]
+	return find_character(id)
 
 func get_enemy(id: String) -> Dictionary:
-	return enemies.filter(func(item: Dictionary) -> bool: return item["id"] == id)[0]
+	return find_enemy(id)
 
-func get_card(id: String) -> Dictionary:
+func find_character(id: String) -> Dictionary:
+	for character in characters:
+		if str(character.get("id", "")) == id:
+			return character
+	return {}
+
+func find_enemy(id: String) -> Dictionary:
+	for enemy in enemies:
+		if str(enemy.get("id", "")) == id:
+			return enemy
+	return {}
+
+func find_card(id: String) -> Dictionary:
 	var upgraded := id.ends_with("+")
 	var base_id := id.substr(0, id.length() - 1) if upgraded else id
-	var card: Dictionary = cards.filter(func(item: Dictionary) -> bool: return item["id"] == base_id)[0].duplicate(true)
+	var card: Dictionary = {}
+	for card_def in cards:
+		if str(card_def.get("id", "")) == base_id:
+			card = card_def.duplicate(true)
+			break
+	if card.is_empty():
+		return {}
 	if upgraded:
 		card["id"] = id
 		card["name"] = "%s+" % str(card["name"])
@@ -359,6 +377,9 @@ func get_card(id: String) -> Dictionary:
 						effect["amount"] = int(effect.get("amount", 0)) + 1
 			card["description"] = _describe_effects(card["effects"])
 	return card
+
+func get_card(id: String) -> Dictionary:
+	return find_card(id)
 
 func _describe_effects(effects: Array) -> String:
 	var parts: Array[String] = []
@@ -428,7 +449,13 @@ func _status_label(status_id: String) -> String:
 	return status_id
 
 func get_relic(id: String) -> Dictionary:
-	return relics.filter(func(item: Dictionary) -> bool: return item["id"] == id)[0]
+	return find_relic(id)
+
+func find_relic(id: String) -> Dictionary:
+	for relic in relics:
+		if str(relic.get("id", "")) == id:
+			return relic
+	return {}
 
 func resolve_cards(ids: Array[String]) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []

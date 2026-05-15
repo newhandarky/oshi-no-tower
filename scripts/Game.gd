@@ -342,14 +342,19 @@ func start_combat(node: Dictionary) -> void:
 func _resolve_node_enemy(node: Dictionary) -> Dictionary:
 	if node.has("boss_enemy_ids"):
 		if node.has("selected_boss_enemy_id"):
-			return database.get_enemy(str(node["selected_boss_enemy_id"]))
+			var selected_boss := database.get_enemy(str(node["selected_boss_enemy_id"]))
+			if not selected_boss.is_empty():
+				return selected_boss
 		var boss_ids: Array = node["boss_enemy_ids"]
-		return database.get_enemy(str(boss_ids.pick_random()))
+		var boss := database.get_enemy(str(boss_ids.pick_random()))
+		return boss if not boss.is_empty() else database.get_enemy("ssrb-gray")
 	if node.has("enemy_id"):
-		return database.get_enemy(str(node["enemy_id"]))
+		var enemy := database.get_enemy(str(node["enemy_id"]))
+		return enemy if not enemy.is_empty() else database.get_enemy("ssrb-gray")
 	if node.has("elite_enemy_ids"):
 		var elite_ids: Array = node["elite_enemy_ids"]
-		return database.get_enemy(str(elite_ids.pick_random()))
+		var elite := database.get_enemy(str(elite_ids.pick_random()))
+		return elite if not elite.is_empty() else database.get_enemy("ssrb-gray")
 	return database.get_enemy("ssrb-gray")
 
 func show_combat(player_action: String = "idle", enemy_action: String = "idle", player_hurt := false, hide_hand := false) -> void:
@@ -887,7 +892,8 @@ func _start_event_battle(outcome: Dictionary) -> void:
 
 func _event_battle_enemy(outcome: Dictionary) -> Dictionary:
 	if outcome.has("enemy_id"):
-		return database.get_enemy(str(outcome.get("enemy_id", "ssrb-gray")))
+		var enemy := database.get_enemy(str(outcome.get("enemy_id", "ssrb-gray")))
+		return enemy if not enemy.is_empty() else database.get_enemy("ssrb-gray")
 	var pool := str(outcome.get("enemy_pool", "normal"))
 	var candidates: Array[Dictionary] = []
 	for enemy in database.enemies:
@@ -1040,7 +1046,7 @@ func _add_deck_selection_grid(mode: String, callback: Callable) -> void:
 	var visible_items: Array[Dictionary] = []
 	for index in range(run_state.deck_ids.size()):
 		var card_id := str(run_state.deck_ids[index])
-		if mode == "upgrade" and card_id.ends_with("+"):
+		if mode == "upgrade" and not _card_can_be_upgraded(card_id):
 			continue
 		visible_items.append({ "index": index, "card_id": card_id })
 	for visible_index in range(visible_items.size()):
@@ -1303,7 +1309,7 @@ func _remove_card_at_index(index: int) -> bool:
 func _upgrade_first_card() -> bool:
 	for index in range(run_state.deck_ids.size()):
 		var card_id := str(run_state.deck_ids[index])
-		if not card_id.ends_with("+"):
+		if _card_can_be_upgraded(card_id):
 			run_state.deck_ids[index] = _upgraded_id(card_id)
 			return true
 	return false
@@ -1312,9 +1318,23 @@ func _upgrade_card_at_index(index: int) -> bool:
 	if index < 0 or index >= run_state.deck_ids.size():
 		return false
 	var card_id := str(run_state.deck_ids[index])
-	if card_id.ends_with("+"):
+	if not _card_can_be_upgraded(card_id):
 		return false
 	run_state.deck_ids[index] = _upgraded_id(card_id)
+	return true
+
+func _card_can_be_upgraded(card_id: String) -> bool:
+	if card_id.ends_with("+"):
+		return false
+	var card := database.get_card(card_id)
+	if card.is_empty():
+		return false
+	if bool(card.get("unplayable", false)):
+		return false
+	if str(card.get("curse_hook", "")) != "":
+		return false
+	if str(card.get("kind", "")) == "curse" or card_id.begins_with("curse-"):
+		return false
 	return true
 
 func _upgraded_id(card_id: String) -> String:

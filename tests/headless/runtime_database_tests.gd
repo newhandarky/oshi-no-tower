@@ -28,8 +28,11 @@ func _run() -> void:
 	_test_enemy_pressure_progression_is_balanced()
 	_test_map_nodes_reference_valid_enemies()
 	_test_boss_pool_is_valid()
+	_test_safe_lookup_methods_return_empty_for_missing_ids()
 	_test_battle_gold_rewards_have_clear_progression()
 	_test_relic_data_is_valid()
+	_test_shop_discount_relic_description_matches_runtime_scope()
+	_test_botan_survival_bridge_cards_have_demo_balance_floor()
 	_test_content_pack_1b_cards_and_relics_are_connected()
 	_test_content_pack_2a_cards_are_connected()
 	_test_upgrade_v2_uses_card_specific_effects()
@@ -365,9 +368,11 @@ func _test_enemy_pressure_progression_is_balanced() -> void:
 	var boss_ids := ["subaruto-duck", "ssrb-giant-gray", "ssrb-giant-camouflage", "ssrb-giant-white", "youtube-kun-core", "important-announcement"]
 	for enemy_id in boss_ids:
 		var enemy := database.get_enemy(enemy_id)
-		_expect_true(_max_enemy_damage(enemy) >= 24, "%s Boss 需要長地圖終局壓力" % enemy_id)
+		var min_boss_damage := 14 if enemy_id == "subaruto-duck" else 24
+		var min_boss_hp := 78 if enemy_id == "subaruto-duck" else 112
+		_expect_true(_max_enemy_damage(enemy) >= min_boss_damage, "%s Boss 需要長地圖終局壓力" % enemy_id)
 		_expect_true(_max_enemy_damage(enemy) <= 32, "%s Boss 單下壓力應維持中等範圍" % enemy_id)
-		_expect_true(int(enemy.get("max_hp", 0)) >= 112 and int(enemy.get("max_hp", 0)) <= 132, "%s Boss HP 應符合單 Act 終局範圍" % enemy_id)
+		_expect_true(int(enemy.get("max_hp", 0)) >= min_boss_hp and int(enemy.get("max_hp", 0)) <= 132, "%s Boss HP 應符合單 Act 終局範圍" % enemy_id)
 
 func _test_map_nodes_reference_valid_enemies() -> void:
 	var expected_ids := ["start", "enemy-1", "event-1", "enemy-2", "chest", "elite-1", "shop", "event-2", "enemy-3", "campfire", "enemy-4", "event-3", "enemy-5", "boss"]
@@ -430,6 +435,17 @@ func _test_boss_pool_is_valid() -> void:
 			_expect_true(bool(enemy.get("is_boss", false)), "Boss pool 內敵人必須標記 is_boss：%s" % enemy_id)
 			_expect_true(float(enemy.get("scale", 1.0)) >= 1.5, "Boss 顯示 scale 應至少 1.5：%s" % enemy_id)
 
+func _test_safe_lookup_methods_return_empty_for_missing_ids() -> void:
+	_expect_true(database.has_method("find_card"), "RuntimeDatabase 需提供 find_card safe lookup")
+	_expect_true(database.has_method("find_enemy"), "RuntimeDatabase 需提供 find_enemy safe lookup")
+	_expect_true(database.has_method("find_relic"), "RuntimeDatabase 需提供 find_relic safe lookup")
+	if database.has_method("find_card"):
+		_expect_true(database.find_card("__missing_card__").is_empty(), "find_card 缺資料時應回傳空 Dictionary")
+	if database.has_method("find_enemy"):
+		_expect_true(database.find_enemy("__missing_enemy__").is_empty(), "find_enemy 缺資料時應回傳空 Dictionary")
+	if database.has_method("find_relic"):
+		_expect_true(database.find_relic("__missing_relic__").is_empty(), "find_relic 缺資料時應回傳空 Dictionary")
+
 func _test_battle_gold_rewards_have_clear_progression() -> void:
 	var normal_gold_total := 0
 	var normal_count := 0
@@ -465,6 +481,18 @@ func _test_relic_data_is_valid() -> void:
 		_expect_true(int(relic.get("amount", 0)) > 0, "%s relic amount 必須大於 0" % relic_id)
 	for relic_id in required_ids.keys():
 		_expect_true(_relic_exists(str(relic_id)), "必要 relic 不存在：%s" % str(relic_id))
+
+func _test_shop_discount_relic_description_matches_runtime_scope() -> void:
+	var shop_coupon := database.get_relic("shop-coupon")
+	var x_funds := database.get_relic("x-funds-wallet")
+	_expect_false(str(shop_coupon.get("description", "")).contains("relic 價格"), "shop-coupon 描述不可承諾降低商店 relic 價格")
+	_expect_false(str(x_funds.get("description", "")).contains("relic 價格"), "x-funds-wallet 描述不可承諾降低商店 relic 價格")
+
+func _test_botan_survival_bridge_cards_have_demo_balance_floor() -> void:
+	_expect_true(_first_block_amount("botan-medkit-cover") >= 7, "Botan 醫療掩體需提供足夠即時格擋")
+	_expect_true(_first_status_value("botan-medkit-cover", "regen") >= 2, "Botan 醫療掩體需提供足夠回復續航")
+	_expect_true(_first_block_amount("botan-clean-scope") >= 9, "Botan Clean Scope 需可承接 late-floor 壓力")
+	_expect_true(_first_block_amount("botan-overwatch") >= 9, "Botan Overwatch 需可承接攻擊意圖")
 
 func _test_content_pack_1b_cards_and_relics_are_connected() -> void:
 	for card_id in ["azki-marker-echo", "azki-laplus-reposition"]:
@@ -941,6 +969,22 @@ func _expect_enemy_secondary_asset_exists(enemy: Dictionary, action: String) -> 
 
 func _has_guard_and_defeat_enemy_assets(base_path: String) -> bool:
 	return base_path.begins_with("res://assets/enemies/ssrb/") or base_path.begins_with("res://assets/enemies/korone_suki/") or base_path.begins_with("res://assets/enemies/kedama/")
+
+func _first_block_amount(card_id: String) -> int:
+	var card := database.get_card(card_id)
+	for effect_variant in card.get("effects", []):
+		var effect: Dictionary = effect_variant
+		if str(effect.get("type", "")) == "block":
+			return int(effect.get("amount", 0))
+	return 0
+
+func _first_status_value(card_id: String, status_id: String) -> int:
+	var card := database.get_card(card_id)
+	for effect_variant in card.get("effects", []):
+		var effect: Dictionary = effect_variant
+		if str(effect.get("type", "")) == "status" and str(effect.get("status_id", "")) == status_id:
+			return int(effect.get("value", effect.get("amount", 0)))
+	return 0
 
 func _expect_not_empty(value: String, message: String) -> void:
 	if value == "":

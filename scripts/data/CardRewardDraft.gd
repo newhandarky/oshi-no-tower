@@ -97,11 +97,17 @@ func _card_score(card: Dictionary, deck_signal: Dictionary, floor: int) -> float
 	var score := 10.0
 	var card_id := str(card.get("id", ""))
 	var existing_copies := int(deck_signal.get("card:%s" % card_id, 0))
-	if existing_copies > 0 and str(card.get("character", "")) == "azki" and str(card.get("rarity", "")) != "starter":
-		score -= float(existing_copies) * 40.0
+	if existing_copies > 0 and str(card.get("rarity", "")) != "starter":
+		var duplicate_penalty := 96.0 if str(card.get("character", "")) == "azki" else 46.0
+		if str(card.get("rarity", "")) == "rare":
+			duplicate_penalty += 34.0
+		score -= float(existing_copies) * duplicate_penalty
 	score += float(_archetype_score(card, deck_signal)) * 18.0
+	score += _subaru_midrun_tempo_block_bonus(card, deck_signal, floor)
+	score += _botan_midrun_guard_bonus(card, deck_signal, floor)
 	score += _azki_early_survival_bonus(card, deck_signal, floor)
 	score += _azki_chapter_2_consistency_bonus(card, deck_signal, floor)
+	score += _azki_midrun_payoff_bonus(card, deck_signal, floor)
 	if _has_any_role(card, SURVIVAL_ROLES):
 		score += 7.0
 	if card.get("role_tags", []).has("setup"):
@@ -118,6 +124,38 @@ func _card_score(card: Dictionary, deck_signal: Dictionary, floor: int) -> float
 		"curse":
 			score -= 100.0
 	return score
+
+func _subaru_midrun_tempo_block_bonus(card: Dictionary, deck_signal: Dictionary, floor: int) -> float:
+	if floor < 5 or floor > 12:
+		return 0.0
+	if str(card.get("character", "")) != "subaru":
+		return 0.0
+	if int(deck_signal.get("cheap_chain", 0)) < 4:
+		return 0.0
+	var card_id := str(card.get("id", ""))
+	if card_id in ["subaru-crowd-cover", "subaru-rhythm-guard", "subaru-desk-reaction", "subaru-new-oshi-call"]:
+		return 46.0
+	if card.get("archetype_tags", []).has("tempo_block") and _has_any_role(card, ["defense", "bridge"]):
+		return 30.0
+	if card_id in ["subaru-cheer-recover", "subaru-hype-call"] and int(deck_signal.get("card:%s" % card_id, 0)) >= 1:
+		return -35.0
+	return 0.0
+
+func _botan_midrun_guard_bonus(card: Dictionary, deck_signal: Dictionary, floor: int) -> float:
+	if floor < 7 or floor > 13:
+		return 0.0
+	if str(card.get("character", "")) != "botan":
+		return 0.0
+	if int(deck_signal.get("two_cost_burst", 0)) < 4:
+		return 0.0
+	var card_id := str(card.get("id", ""))
+	if card_id in ["botan-clean-scope", "botan-overwatch", "botan-fortified-cover", "botan-counter-line", "botan-precise-cover"]:
+		return 46.0
+	if card_id == "botan-perfect-line" and int(deck_signal.get("card:botan-perfect-line", 0)) >= 1:
+		return -80.0
+	if _has_any_role(card, ["defense", "bridge"]):
+		return 24.0
+	return 0.0
 
 func _azki_early_survival_bonus(card: Dictionary, deck_signal: Dictionary, floor: int) -> float:
 	if floor > 5:
@@ -155,6 +193,32 @@ func _azki_chapter_2_consistency_bonus(card: Dictionary, deck_signal: Dictionary
 	if floor >= 8 and (card.get("role_tags", []).has("payoff") or card.get("role_tags", []).has("scaling")):
 		bonus += 50.0
 	return bonus
+
+func _azki_midrun_payoff_bonus(card: Dictionary, deck_signal: Dictionary, floor: int) -> float:
+	if floor < 8:
+		return 0.0
+	if str(card.get("character", "")) != "azki":
+		return 0.0
+	if int(deck_signal.get("laplus_guard", 0)) < 2 or int(deck_signal.get("marker_loop", 0)) < 2:
+		return 0.0
+	var card_id := str(card.get("id", ""))
+	if card_id in ["azki-laplus-overflow", "azki-necrobinder-finale", "azki-laplus-crash", "azki-laplus-combo"]:
+		if int(deck_signal.get("card:%s" % card_id, 0)) >= 1:
+			return -95.0
+		return 74.0
+	if _azki_existing_laplus_payoff_count(deck_signal) >= 2 and card_id in ["azki-laplus-cover", "azki-laplus-reposition", "azki-safe-route", "azki-coordinate-shield", "azki-laplus-combo"]:
+		return 118.0
+	if card.get("role_tags", []).has("payoff") or card.get("role_tags", []).has("scaling"):
+		return 48.0
+	if int(deck_signal.get("card:%s" % card_id, 0)) >= 1 and _has_any_role(card, ["bridge", "setup"]):
+		return -45.0
+	return 0.0
+
+func _azki_existing_laplus_payoff_count(deck_signal: Dictionary) -> int:
+	var count := 0
+	for card_id in ["azki-laplus-overflow", "azki-necrobinder-finale", "azki-laplus-crash", "azki-laplus-combo"]:
+		count += int(deck_signal.get("card:%s" % card_id, 0))
+	return count
 
 func _archetype_score(card: Dictionary, deck_signal: Dictionary) -> int:
 	var score := 0
