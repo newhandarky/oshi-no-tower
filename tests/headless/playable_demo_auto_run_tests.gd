@@ -71,6 +71,8 @@ func _run_auto_case(character_id: String, run_seed: int, required_result: String
 		"combat_start_hp": 0,
 		"combat_start_deck_ids": [],
 		"combat_start_relic_ids": [],
+		"qa_report": {},
+		"qa_report_text": "",
 		"azki_actions_seen": [],
 		"result": "failed"
 	}
@@ -459,6 +461,8 @@ func _validate_run_log(log: Dictionary, required_result: String = "") -> void:
 	_expect_true(int(log.get("visited_node_count", 0)) >= 2 or result == "defeated", "%s auto-run 應至少完成多個節點或死亡收束" % character_id)
 	_expect_true(int(log.get("combat_count", 0)) >= 1, "%s auto-run 應至少完成一場戰鬥流程" % character_id)
 	_expect_true(str(log.get("final_screen", "")) in ["map", "reward", "boss_reward", "run_end"], "%s auto-run 不應停在 blocking screen：%s" % [character_id, str(log.get("final_screen", ""))])
+	_expect_true((log.get("qa_report", {}) as Dictionary).has("deck_ids"), "%s auto-run log 應包含結構化 QA report" % character_id)
+	_expect_true(str(log.get("qa_report_text", "")).contains("QA 回報摘要"), "%s auto-run log 應包含可複製 QA report text" % character_id)
 	if result == "defeated":
 		_expect_true(str(log.get("defeat_enemy_id", "")) != "", "%s auto-run 死亡時需記錄 defeat_enemy_id" % character_id)
 		_expect_true(int(log.get("defeat_floor", 0)) > 0, "%s auto-run 死亡時需記錄 defeat_floor" % character_id)
@@ -476,6 +480,13 @@ func _update_log_from_app(log: Dictionary, app: Node) -> void:
 	log["deck_count"] = app.run_state.deck_ids.size()
 	log["relic_count"] = app.run_state.relic_ids.size()
 	log["visited_node_count"] = app.run_state.visited_node_ids.size()
+	_update_qa_report_from_app(log, app)
+
+func _update_qa_report_from_app(log: Dictionary, app: Node) -> void:
+	var cleared := str(app.current_screen) == "boss_reward" or (str(app.current_screen) == "run_end" and bool(app.last_run_end_cleared))
+	var snapshot: Dictionary = app._manual_qa_report_snapshot(cleared)
+	log["qa_report"] = snapshot
+	log["qa_report_text"] = app._manual_qa_report_text_from_snapshot(snapshot)
 
 func _selected_boss_id(app: Node) -> String:
 	for node_variant in app.run_state.active_map.get("nodes", []):

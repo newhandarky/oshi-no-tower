@@ -1076,6 +1076,9 @@ func show_run_end(cleared: bool) -> void:
 	_add_debug_hint()
 
 func _manual_qa_report_text(cleared: bool) -> String:
+	return _manual_qa_report_text_from_snapshot(_manual_qa_report_snapshot(cleared))
+
+func _manual_qa_report_snapshot(cleared: bool) -> Dictionary:
 	var current_node: Dictionary = run_state.get_current_node(database)
 	var floor := int(current_node.get("floor", 0))
 	var enemy_id := ""
@@ -1086,12 +1089,36 @@ func _manual_qa_report_text(cleared: bool) -> String:
 	var hp_before_end: int = run_state.hp
 	if combat != null:
 		hp_before_end = int(combat.player_hp)
+	var boss := _random_map_boss_enemy()
+	var boss_id := ""
+	var boss_name := ""
+	if not boss.is_empty():
+		boss_id = str(boss.get("id", ""))
+		boss_name = str(boss.get("display_name", boss_id))
+	return {
+		"title": "QA 回報摘要",
+		"character_id": run_state.character_id,
+		"character": _manual_qa_character_label(),
+		"result": "通關" if cleared else "死亡",
+		"seed": int(run_state.map_seed),
+		"boss_id": boss_id,
+		"boss": _manual_qa_boss_label_from_parts(boss_id, boss_name),
+		"defeat_floor": floor if not cleared else 0,
+		"defeat_floor_label": _manual_qa_floor_label(floor, cleared),
+		"defeat_enemy_id": enemy_id if not cleared else "",
+		"defeat_enemy": _manual_qa_enemy_label(enemy_id, enemy_name, cleared),
+		"defeat_hp": hp_before_end,
+		"deck_ids": run_state.deck_ids.duplicate(),
+		"relic_ids": run_state.relic_ids.duplicate()
+	}
+
+func _manual_qa_report_text_from_snapshot(snapshot: Dictionary) -> String:
 	return "\n".join([
 		"QA 回報摘要",
-		"角色：%s   結果：%s   Seed：%d   Boss：%s" % [_manual_qa_character_label(), "通關" if cleared else "死亡", int(run_state.map_seed), _manual_qa_boss_label()],
-		"死亡樓層：%s   死亡敵人：%s   死亡前 HP：%d" % [_manual_qa_floor_label(floor, cleared), _manual_qa_enemy_label(enemy_id, enemy_name, cleared), hp_before_end],
-		"Deck：%s" % _manual_qa_join_ids(run_state.deck_ids),
-		"Relic：%s" % _manual_qa_join_ids(run_state.relic_ids),
+		"角色：%s   結果：%s   Seed：%d   Boss：%s" % [str(snapshot.get("character", "")), str(snapshot.get("result", "")), int(snapshot.get("seed", 0)), str(snapshot.get("boss", "未知"))],
+		"死亡樓層：%s   死亡敵人：%s   死亡前 HP：%d" % [str(snapshot.get("defeat_floor_label", "未知")), str(snapshot.get("defeat_enemy", "未知")), int(snapshot.get("defeat_hp", 0))],
+		"Deck：%s" % _manual_qa_join_ids(snapshot.get("deck_ids", [])),
+		"Relic：%s" % _manual_qa_join_ids(snapshot.get("relic_ids", [])),
 		"體感問題：",
 		"UI 問題："
 	])
@@ -1112,6 +1139,11 @@ func _manual_qa_boss_label() -> String:
 		return "未知"
 	var boss_id := str(boss.get("id", ""))
 	var boss_name := str(boss.get("display_name", boss_id))
+	return _manual_qa_boss_label_from_parts(boss_id, boss_name)
+
+func _manual_qa_boss_label_from_parts(boss_id: String, boss_name: String) -> String:
+	if boss_id == "":
+		return "未知"
 	return "%s (%s)" % [boss_name, boss_id]
 
 func _manual_qa_floor_label(floor: int, cleared: bool) -> String:
@@ -1126,7 +1158,7 @@ func _manual_qa_enemy_label(enemy_id: String, enemy_name: String, cleared: bool)
 		return "未知"
 	return "%s (%s)" % [enemy_name, enemy_id]
 
-func _manual_qa_join_ids(ids: Array[String]) -> String:
+func _manual_qa_join_ids(ids: Array) -> String:
 	if ids.is_empty():
 		return "無"
 	return ", ".join(ids)
