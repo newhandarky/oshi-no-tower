@@ -23,6 +23,7 @@
 manual full-run 仍是 Desktop Build Readiness 與 Creative Director final acceptance 的前置條件。執行時建議記錄：
 
 - 010 起，結算畫面會顯示 `QA 回報摘要`，可直接抄出角色、結果、seed、Boss、死亡樓層、死亡敵人、死亡前 HP、Deck、Relic。
+- 011 起，headless `playable_demo_auto_run_log` 與 `multiseed_balance_probe_log` 也會輸出同格式的 `qa_report` / `qa_report_text`，玩家回報與自動測試可用同一套欄位比對。
 - 使用者實機回報時，優先補充畫面摘要沒有自動知道的「體感問題」與「UI 問題」。
 - 角色：Subaru / Botan / AZKi 各至少一輪 16 floor random run。
 - 體感：是否常見「能活但殺不掉」、「能殺但擋不住」、「reward 看起來沒有成形方向」。
@@ -33,4 +34,4 @@ manual full-run 仍是 Desktop Build Readiness 與 Creative Director final accep
 
 1. 先 merge 009，保持 headless guardrail 與文件入口乾淨。
 2. 下一輪若轉 manual QA，直接截取或抄寫結算畫面的 `QA 回報摘要`，再補體感 / UI 問題。
-3. 下一輪若繼續自動化，可把相同摘要格式延伸到 auto-run log，讓 headless 與玩家回報使用同一套欄位。
+3. 下一輪若繼續自動化，可針對 `qa_report` 加上失敗 seed 分群摘要，優先看同角色重複死亡樓層、敵人與 deck/relic pattern。

@@ -9,6 +9,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await _test_run_end_screen_includes_manual_qa_report_fields()
+	await _test_manual_qa_report_snapshot_is_structured_for_headless_logs()
 
 	if failures.is_empty():
 		print("manual_qa_reporting_tests: ok")
@@ -49,6 +50,33 @@ func _test_run_end_screen_includes_manual_qa_report_fields() -> void:
 		"Relic：duck-whistle"
 	]:
 		_expect_true(text.contains(expected), "結算畫面應包含可回報欄位：%s" % expected)
+	app.queue_free()
+
+func _test_manual_qa_report_snapshot_is_structured_for_headless_logs() -> void:
+	var app = MainScene.instantiate()
+	root.add_child(app)
+	await process_frame
+
+	app.run_state.start_random_run(app.database, "azki", 2026052011)
+	var first_battle_id := _first_available_battle_node_id(app)
+	_expect_true(app.run_state.set_current_node(first_battle_id), "測試應能進入 AZKi 第一個戰鬥節點")
+	app.start_combat(app.run_state.get_current_node(app.database))
+	app.run_state.deck_ids.append("azki-phantom-route")
+	app.run_state.relic_ids.append("unarchived-archive")
+	app.combat.player_hp = 3
+
+	_expect_true(app.has_method("_manual_qa_report_snapshot"), "Game 應提供結構化 QA snapshot 給 headless log 重用")
+	if app.has_method("_manual_qa_report_snapshot"):
+		var snapshot: Dictionary = app._manual_qa_report_snapshot(false)
+		_expect_true(str(snapshot.get("character", "")) == "AZKi", "QA snapshot 應提供角色顯示名稱")
+		_expect_true(str(snapshot.get("result", "")) == "死亡", "QA snapshot 應提供結果")
+		_expect_true(int(snapshot.get("seed", 0)) == 2026052011, "QA snapshot 應提供 seed")
+		_expect_true(str(snapshot.get("boss", "")) != "", "QA snapshot 應提供 boss label")
+		_expect_true(int(snapshot.get("defeat_floor", 0)) > 0, "QA snapshot 應提供死亡樓層")
+		_expect_true(str(snapshot.get("defeat_enemy_id", "")) != "", "QA snapshot 應提供死亡敵人 id")
+		_expect_true(int(snapshot.get("defeat_hp", -1)) == 3, "QA snapshot 應提供死亡前 HP")
+		_expect_true((snapshot.get("deck_ids", []) as Array).has("azki-phantom-route"), "QA snapshot 應提供 deck ids")
+		_expect_true((snapshot.get("relic_ids", []) as Array).has("unarchived-archive"), "QA snapshot 應提供 relic ids")
 	app.queue_free()
 
 func _first_available_battle_node_id(app: Node) -> String:

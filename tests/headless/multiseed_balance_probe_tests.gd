@@ -78,6 +78,8 @@ func _run_auto_case(character_id: String, run_seed: int) -> void:
 		"combat_start_relic_ids": [],
 		"route_node_ids": [],
 		"route_node_types": [],
+		"qa_report": {},
+		"qa_report_text": "",
 		"result": "failed"
 	}
 
@@ -421,6 +423,10 @@ func _validate_probe_log(log: Dictionary) -> void:
 		_fail("%s seed %d probe 沒有完成任何戰鬥流程" % [str(log.get("character_id", "")), int(log.get("seed", 0))])
 	if not str(log.get("final_screen", "")) in ["map", "reward", "boss_reward", "run_end"]:
 		_fail("%s seed %d probe 停在 blocking screen：%s" % [str(log.get("character_id", "")), int(log.get("seed", 0)), str(log.get("final_screen", ""))])
+	if not (log.get("qa_report", {}) as Dictionary).has("deck_ids"):
+		_fail("%s seed %d probe 需輸出結構化 QA report" % [str(log.get("character_id", "")), int(log.get("seed", 0))])
+	if not str(log.get("qa_report_text", "")).contains("QA 回報摘要"):
+		_fail("%s seed %d probe 需輸出可複製 QA report text" % [str(log.get("character_id", "")), int(log.get("seed", 0))])
 
 func _update_log_from_app(log: Dictionary, app: Node) -> void:
 	var current_node: Dictionary = app.run_state.get_current_node(app.database)
@@ -432,6 +438,13 @@ func _update_log_from_app(log: Dictionary, app: Node) -> void:
 	log["deck_count"] = app.run_state.deck_ids.size()
 	log["relic_count"] = app.run_state.relic_ids.size()
 	log["visited_node_count"] = app.run_state.visited_node_ids.size()
+	_update_qa_report_from_app(log, app)
+
+func _update_qa_report_from_app(log: Dictionary, app: Node) -> void:
+	var cleared := str(app.current_screen) == "boss_reward" or (str(app.current_screen) == "run_end" and bool(app.last_run_end_cleared))
+	var snapshot: Dictionary = app._manual_qa_report_snapshot(cleared)
+	log["qa_report"] = snapshot
+	log["qa_report_text"] = app._manual_qa_report_text_from_snapshot(snapshot)
 
 func _selected_boss_id(app: Node) -> String:
 	for node_variant in app.run_state.active_map.get("nodes", []):
