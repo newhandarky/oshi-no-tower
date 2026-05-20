@@ -24,6 +24,8 @@ func _run() -> void:
 	_test_all_cards_have_v43_art_paths()
 	_test_player_attack_animation_matches_cost()
 	_test_character_card_pools_have_distinct_combat_profiles()
+	_test_subaru_early_bridge_cards_have_elite_stability_floor()
+	_test_subaru_starter_payoff_has_elite_damage_floor()
 	_test_enemies_have_valid_actions_and_assets()
 	_test_enemy_pressure_progression_is_balanced()
 	_test_map_nodes_reference_valid_enemies()
@@ -311,6 +313,14 @@ func _test_character_card_pools_have_distinct_combat_profiles() -> void:
 	_expect_true(azki_cards.size() >= 13, "AZKi 第一版至少需要起手與 reward 卡池")
 	_expect_true(_count_cards_with_status(azki_cards, "marker") >= 5, "AZKi 應有足夠標記牌")
 	_expect_true(_count_cards_with_effect(azki_cards, "draw") + _count_cards_with_effect(azki_cards, "draw_if_status") >= 4, "AZKi 應有抽牌 / 探索節奏")
+
+func _test_subaru_early_bridge_cards_have_elite_stability_floor() -> void:
+	var desk_reaction := database.get_card("subaru-desk-reaction")
+	_expect_true(_card_effect_amount(desk_reaction, "block") >= 8, "Subaru desk-reaction 需提供足夠 early elite 即時格擋")
+
+func _test_subaru_starter_payoff_has_elite_damage_floor() -> void:
+	var tsukkomi := database.get_card("subaru-tsukkomi")
+	_expect_true(_card_effect_amount(tsukkomi, "damage") >= 8, "Subaru tsukkomi 需提供足夠 early elite 收束傷害")
 
 func _test_enemies_have_valid_actions_and_assets() -> void:
 	var allowed_actions := { "attack": true, "block": true, "attack_block": true, "debuff": true, "buff": true }
@@ -914,6 +924,12 @@ func _card_has_effect(card: Dictionary, effect_type: String) -> bool:
 		if str(effect.get("type", "")) == effect_type:
 			return true
 	return false
+
+func _card_effect_amount(card: Dictionary, effect_type: String) -> int:
+	for effect in card.get("effects", []):
+		if str(effect.get("type", "")) == effect_type:
+			return int(effect.get("amount", 0))
+	return 0
 
 func _collect_v1_effect_schema(effect: Dictionary, schema_flags: Dictionary) -> void:
 	var effect_type := str(effect.get("type", ""))
