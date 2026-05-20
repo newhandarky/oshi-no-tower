@@ -26,6 +26,7 @@ func _run() -> void:
 	_test_character_card_pools_have_distinct_combat_profiles()
 	_test_subaru_early_bridge_cards_have_elite_stability_floor()
 	_test_subaru_starter_payoff_has_elite_damage_floor()
+	_test_azki_late_stability_cards_have_direct_block()
 	_test_enemies_have_valid_actions_and_assets()
 	_test_enemy_pressure_progression_is_balanced()
 	_test_map_nodes_reference_valid_enemies()
@@ -321,6 +322,11 @@ func _test_subaru_early_bridge_cards_have_elite_stability_floor() -> void:
 func _test_subaru_starter_payoff_has_elite_damage_floor() -> void:
 	var tsukkomi := database.get_card("subaru-tsukkomi")
 	_expect_true(_card_effect_amount(tsukkomi, "damage") >= 8, "Subaru tsukkomi 需提供足夠 early elite 收束傷害")
+
+func _test_azki_late_stability_cards_have_direct_block() -> void:
+	for card_id in ["azki-phantom-route", "azki-necro-recall"]:
+		var card := database.get_card(card_id)
+		_expect_true(_card_effect_amount(card, "block") >= 4, "%s 作為 late boss 穩定牌時需提供直接格擋，不可只補 Laplus HP" % card_id)
 
 func _test_enemies_have_valid_actions_and_assets() -> void:
 	var allowed_actions := { "attack": true, "block": true, "attack_block": true, "debuff": true, "buff": true }
