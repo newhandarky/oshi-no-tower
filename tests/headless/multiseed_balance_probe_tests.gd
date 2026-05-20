@@ -397,9 +397,9 @@ func _build_summary() -> Dictionary:
 
 func _validate_probe_summary(summary: Dictionary) -> void:
 	var minimum_boss_reward_reached := {
-		"subaru": 3,
-		"botan": 3,
-		"azki": 3
+		"subaru": 4,
+		"botan": 4,
+		"azki": 4
 	}
 	for character_id in minimum_boss_reward_reached.keys():
 		var stats: Dictionary = summary.get(str(character_id), {})
