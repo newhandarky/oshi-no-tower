@@ -125,10 +125,12 @@ func _card_score(card: Dictionary, deck_signal: Dictionary, floor: int) -> float
 			duplicate_penalty += 34.0
 		score -= float(existing_copies) * duplicate_penalty
 	score += float(_archetype_score(card, deck_signal)) * 18.0
+	score += _subaru_natural_balance_bonus(card, deck_signal, floor)
 	score += _subaru_midrun_tempo_block_bonus(card, deck_signal, floor)
 	score += _botan_midrun_guard_bonus(card, deck_signal, floor)
 	score += _botan_depth_balance_bonus(card, deck_signal, floor)
 	score += _azki_early_survival_bonus(card, deck_signal, floor)
+	score += _azki_natural_balance_bonus(card, deck_signal, floor)
 	score += _azki_chapter_2_consistency_bonus(card, deck_signal, floor)
 	score += _azki_midrun_payoff_bonus(card, deck_signal, floor)
 	score += _role_gap_bonus(card, deck_signal, floor)
@@ -160,6 +162,18 @@ func _role_gap_bonus(card: Dictionary, deck_signal: Dictionary, floor: int) -> f
 	if int(deck_signal.get("role:bridge", 0)) < 2 and card.get("role_tags", []).has("bridge"):
 		score += 18.0
 	return score
+
+func _subaru_natural_balance_bonus(card: Dictionary, deck_signal: Dictionary, floor: int) -> float:
+	if str(card.get("character", "")) != "subaru":
+		return 0.0
+	var cheap_chain_count := int(deck_signal.get("cheap_chain", 0))
+	if cheap_chain_count < 3:
+		return 0.0
+	var card_id := str(card.get("id", ""))
+	if floor >= 7 and int(deck_signal.get("role:defense", 0)) >= 3 and int(deck_signal.get("role:payoff", 0)) < 3:
+		if card_id in ["subaru-table-slam-loop", "subaru-afterimage-table", "subaru-unstoppable-cheer"]:
+			return 28.0
+	return 0.0
 
 func _subaru_midrun_tempo_block_bonus(card: Dictionary, deck_signal: Dictionary, floor: int) -> float:
 	if floor < 5 or floor > 12:
@@ -237,6 +251,20 @@ func _azki_early_survival_bonus(card: Dictionary, deck_signal: Dictionary, floor
 		return 30.0
 	if card.get("archetype_tags", []).has("laplus_guard") and _has_any_role(card, SURVIVAL_ROLES):
 		return 24.0
+	return 0.0
+
+func _azki_natural_balance_bonus(card: Dictionary, deck_signal: Dictionary, floor: int) -> float:
+	if floor < 7 or floor > 11:
+		return 0.0
+	if str(card.get("character", "")) != "azki":
+		return 0.0
+	if int(deck_signal.get("marker_loop", 0)) < 1 or int(deck_signal.get("laplus_guard", 0)) < 2:
+		return 0.0
+	var card_id := str(card.get("id", ""))
+	if _azki_existing_laplus_payoff_count(deck_signal) < 2 and card_id in ["azki-laplus-overflow", "azki-laplus-release", "azki-necrobinder-finale", "azki-laplus-crash", "azki-laplus-combo"]:
+		return 58.0
+	if _azki_existing_laplus_payoff_count(deck_signal) >= 1 and card_id in ["azki-phantom-route", "azki-necro-recall", "azki-laplus-cover", "azki-laplus-reposition", "azki-safe-route", "azki-dark-tether"]:
+		return 28.0
 	return 0.0
 
 func _azki_chapter_2_consistency_bonus(card: Dictionary, deck_signal: Dictionary, floor: int) -> float:
