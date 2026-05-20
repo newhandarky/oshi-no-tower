@@ -53,7 +53,7 @@ func _run() -> void:
 	_test_azki_first_marker_passive_draws_once_per_turn()
 	_test_azki_summon_starts_alive()
 	_test_azki_summon_intercepts_unblocked_damage()
-	_test_azki_summon_overflow_damages_player_and_stays_down()
+	_test_azki_summon_revives_on_next_player_turn_after_enemy_defeat()
 	_test_azki_summon_alive_does_not_auto_stack_at_turn_start()
 	_test_non_azki_characters_do_not_create_summon()
 	_test_dead_air_reduces_energy_when_drawn()
@@ -284,7 +284,7 @@ func _test_marker_adds_bonus_damage_and_consumes_one_layer() -> void:
 	engine.try_play_card(state, 0)
 	_expect_eq(engine.status_duration(state, "enemy", "marker"), 1, "AZKi 標記牌應給敵人 1 層標記")
 	engine.try_play_card(state, 0)
-	_expect_eq(state.enemy_hp, 20, "標記中的敵人受到攻擊傷害時應額外受到 2 點傷害")
+	_expect_eq(state.enemy_hp, 18, "標記中的敵人受到攻擊傷害時應額外受到 2 點傷害")
 	_expect_eq(engine.status_duration(state, "enemy", "marker"), 0, "標記觸發後應消耗 1 層")
 
 func _test_marker_payoff_pushes_turn_event() -> void:
@@ -601,14 +601,14 @@ func _test_azki_summon_intercepts_unblocked_damage() -> void:
 	_expect_eq(state.last_summon_damage, 1, "戰鬥狀態需記錄 Laplus 本次承傷")
 	_expect_true(state.summon_alive, "Laplus 未歸零時仍應 alive")
 
-func _test_azki_summon_overflow_damages_player_and_stays_down() -> void:
+func _test_azki_summon_revives_on_next_player_turn_after_enemy_defeat() -> void:
 	var state = engine.start_combat(30, 30, _deck(["azki-map-shot"]), _enemy_attack(12, 20), [], false, {}, _azki_summon())
 
 	engine.end_player_turn(state)
 
 	_expect_eq(state.player_hp, 19, "超過 Laplus HP 的 overflow 應扣 AZKi HP")
-	_expect_eq(state.summon_hp, 0, "Laplus 倒下後不應靠回合開始自動復活")
-	_expect_false(state.summon_alive, "Laplus 倒下後需靠卡牌重新疊 HP")
+	_expect_eq(state.summon_hp, 1, "Laplus 在敵方回合倒下後，下一個玩家回合開始應以 1 HP 復活")
+	_expect_true(state.summon_alive, "Laplus 在下一個玩家回合開始應恢復 alive")
 	_expect_true(state.last_summon_defeated, "戰鬥狀態需記錄 Laplus 本次倒下")
 	_expect_eq(state.last_summon_damage, 1, "Laplus 倒下前最多承受自身剩餘 HP")
 

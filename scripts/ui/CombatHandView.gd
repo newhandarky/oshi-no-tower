@@ -66,16 +66,20 @@ func set_card_hovered(button: Button, hovered: bool) -> void:
 		var hover_size := base_size * 1.65
 		var base_position: Vector2 = button.get_meta("base_position", button.position)
 		var base_rotation := float(button.get_meta("base_rotation", button.rotation_degrees))
-		_set_sibling_cards_hover_locked(button, true)
+		_remove_hover_preview(button)
 		button.set_meta("hover_expand_duration", HOVER_EXPAND_SECONDS)
 		button.set_meta("hover_lift_duration", HOVER_LIFT_SECONDS)
 		button.set_meta("hover_target", true)
-		_animate_hover_in(button, card, hover_size, base_position, base_rotation, prefix)
+		_animate_hover_preview_in(button, card, hover_size, base_position, base_rotation, prefix)
 		return
-	_set_sibling_cards_hover_locked(button, false)
 	button.set_meta("hover_shrink_duration", HOVER_SHRINK_SECONDS)
 	button.set_meta("hover_target", false)
-	_animate_card_to(button, card, base_size, button.get_meta("base_position", button.position), float(button.get_meta("base_rotation", button.rotation_degrees)), 1200, HOVER_SHRINK_SECONDS, prefix, false)
+	_remove_hover_preview(button)
+	button.size = base_size
+	button.position = button.get_meta("base_position", button.position)
+	button.rotation_degrees = float(button.get_meta("base_rotation", button.rotation_degrees))
+	button.z_index = int(button.get_meta("base_z_index", button.z_index))
+	card_view.render_button(button, card, base_size, prefix)
 
 func animate_cards_to_discard(parent: Control, buttons: Array[Button]) -> Tween:
 	if buttons.is_empty() or parent == null:
@@ -149,33 +153,44 @@ func animate_draw_from_left(parent: Control, buttons: Array[Button], start_index
 		animated_index += 1
 	return tween
 
-func _animate_hover_in(button: Button, card: Dictionary, target_size: Vector2, base_position: Vector2, base_rotation: float, prefix: String) -> void:
-	var current_size := button.size
-	var current_position := button.position
+func _animate_hover_preview_in(button: Button, card: Dictionary, target_size: Vector2, base_position: Vector2, base_rotation: float, prefix: String) -> void:
+	var parent := button.get_parent()
+	if parent == null or not (parent is Control):
+		return
+	var base_size: Vector2 = button.get_meta("base_size", button.size)
+	var preview: Button = card_view.create_button(parent as Control, card, base_position, base_size, func() -> void:
+		pass
+	, prefix, true)
+	preview.name = "CombatHoverPreview"
+	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	preview.z_index = 1200
+	preview.rotation_degrees = base_rotation
+	preview.set_meta("hover_preview", true)
+	preview.set_meta("base_size", base_size)
+	preview.set_meta("base_position", base_position)
+	button.set_meta("hover_preview_node", preview)
 	var lift_position := Vector2(base_position.x, base_position.y - 24.0)
 	var target_position := Vector2(base_position.x, screen_size.y - target_size.y)
 	button.set_meta("hover_lift_position", lift_position)
 	button.set_meta("hover_target_position", target_position)
-	button.scale = Vector2.ONE
-	button.z_index = 1200
-	card_view.render_button(button, card, target_size, prefix)
-	button.size = current_size
-	button.pivot_offset = Vector2(current_size.x / 2.0, current_size.y)
-	button.position = current_position
-	button.rotation_degrees = base_rotation
-	var tween := button.create_tween()
-	button.set_meta("hover_tween", tween)
+	preview.scale = Vector2.ONE
+	card_view.render_button(preview, card, target_size, prefix)
+	preview.size = base_size
+	preview.pivot_offset = Vector2(base_size.x / 2.0, base_size.y)
+	preview.position = base_position
+	var tween := preview.create_tween()
+	preview.set_meta("hover_tween", tween)
 	tween.set_parallel(true)
-	tween.tween_property(button, "position", lift_position, HOVER_LIFT_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_property(button, "size", target_size, HOVER_EXPAND_SECONDS - HOVER_LIFT_SECONDS).set_delay(HOVER_LIFT_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tween.tween_property(button, "position", target_position, HOVER_EXPAND_SECONDS - HOVER_LIFT_SECONDS).set_delay(HOVER_LIFT_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(preview, "position", lift_position, HOVER_LIFT_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(preview, "size", target_size, HOVER_EXPAND_SECONDS - HOVER_LIFT_SECONDS).set_delay(HOVER_LIFT_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(preview, "position", target_position, HOVER_EXPAND_SECONDS - HOVER_LIFT_SECONDS).set_delay(HOVER_LIFT_SECONDS).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.finished.connect(func() -> void:
-		if not is_instance_valid(button):
+		if not is_instance_valid(preview):
 			return
-		button.size = target_size
-		button.pivot_offset = Vector2(target_size.x / 2.0, target_size.y)
-		button.position = target_position
-		button.rotation_degrees = base_rotation
+		preview.size = target_size
+		preview.pivot_offset = Vector2(target_size.x / 2.0, target_size.y)
+		preview.position = target_position
+		preview.rotation_degrees = base_rotation
 	)
 
 func _animate_card_to(button: Button, card: Dictionary, target_size: Vector2, target_position: Vector2, target_rotation: float, target_z: int, duration: float, prefix: String, hovered: bool) -> void:
@@ -214,6 +229,21 @@ func _kill_hover_tween(button: Button) -> void:
 	if tween != null and tween is Tween and is_instance_valid(tween):
 		(tween as Tween).kill()
 
+func _remove_hover_preview(button: Button) -> void:
+	if button.has_meta("hover_preview_node"):
+		var preview = button.get_meta("hover_preview_node")
+		if preview != null and is_instance_valid(preview):
+			_kill_hover_tween(preview as Button)
+			(preview as Button).queue_free()
+		button.remove_meta("hover_preview_node")
+	var parent := button.get_parent()
+	if parent == null:
+		return
+	for child in parent.get_children():
+		if child is Button and bool((child as Button).get_meta("hover_preview", false)):
+			_kill_hover_tween(child as Button)
+			(child as Button).queue_free()
+
 func _set_sibling_cards_hover_locked(active_button: Button, locked: bool) -> void:
 	var parent := active_button.get_parent()
 	if parent == null:
@@ -229,6 +259,10 @@ func _set_sibling_cards_hover_locked(active_button: Button, locked: bool) -> voi
 
 func _clear_hand_hover_lock(parent: Control) -> void:
 	for child in parent.get_children():
+		if child is Button and bool((child as Button).get_meta("hover_preview", false)):
+			_kill_hover_tween(child as Button)
+			(child as Button).queue_free()
+			continue
 		if not (child is Button):
 			continue
 		var button := child as Button

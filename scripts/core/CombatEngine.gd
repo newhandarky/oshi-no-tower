@@ -118,6 +118,10 @@ func _setup_summon(state, summon_config: Dictionary) -> void:
 func _apply_player_turn_start_summon(state) -> void:
 	if state.summon_id == "" or int(state.enemy_hp) <= 0:
 		return
+	if int(state.summon_hp) <= 0 or not bool(state.summon_alive):
+		state.summon_hp = 1
+		state.summon_alive = true
+		return
 	state.summon_alive = state.summon_hp > 0
 
 func draw_cards(state, amount: int) -> void:

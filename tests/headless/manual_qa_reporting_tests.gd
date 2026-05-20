@@ -45,11 +45,13 @@ func _test_run_end_screen_includes_manual_qa_report_fields() -> void:
 		"死亡樓層：",
 		"死亡敵人：",
 		"死亡前 HP：0",
-		"Deck：",
-		"subaru-combo-boost",
-		"Relic：duck-whistle"
+		"主要 deck/relic：",
+		"連段催化",
+		"鴨鴨哨子"
 	]:
 		_expect_true(text.contains(expected), "結算畫面應包含可回報欄位：%s" % expected)
+	_expect_false(text.contains("subaru-combo-boost"), "結算畫面應顯示中文卡名，不直接顯示 card id")
+	_expect_false(text.contains("duck-whistle"), "結算畫面應顯示中文 relic 名，不直接顯示 relic id")
 	app.queue_free()
 
 func _test_manual_qa_report_snapshot_is_structured_for_headless_logs() -> void:
@@ -105,3 +107,7 @@ func _node_text(node: Node) -> String:
 func _expect_true(actual: bool, message: String) -> void:
 	if not actual:
 		failures.append("%s：expected true, got false" % message)
+
+func _expect_false(actual: bool, message: String) -> void:
+	if actual:
+		failures.append("%s：expected false, got true" % message)
