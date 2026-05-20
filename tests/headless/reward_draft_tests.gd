@@ -22,6 +22,7 @@ func _run() -> void:
 	_test_azki_chapter_2_shop_frontloads_marker_guard_and_payoff()
 	_test_subaru_midrun_reward_prefers_tempo_block_over_repeat_sustain()
 	_test_subaru_early_reward_frontloads_tempo_bridge()
+	_test_subaru_early_elite_reward_frontloads_immediate_tempo_block()
 	_test_subaru_midrun_reward_turns_bridge_into_payoff()
 	_test_azki_midrun_reward_turns_laplus_bridge_into_payoff()
 	_test_azki_midrun_reward_frontloads_payoff_before_late_boss()
@@ -139,6 +140,19 @@ func _test_subaru_early_reward_frontloads_tempo_bridge() -> void:
 
 	_expect_true(result.has("subaru-crowd-cover") or result.has("subaru-encore-recall") or result.has("subaru-afterimage-table"), "Subaru early cheap-chain reward 應 frontload tempo bridge / payoff，不應只給泛用抽牌或續航")
 	_expect_false(result.has("subaru-cheer-recover") or result.has("subaru-blue-wave"), "Subaru early cheap-chain reward 不應優先推第二張續航")
+
+func _test_subaru_early_elite_reward_frontloads_immediate_tempo_block() -> void:
+	var pool := _subaru_pool()
+	var deck_ids := [
+		"subaru-strike", "subaru-strike", "subaru-strike", "subaru-strike",
+		"subaru-guard", "subaru-guard", "subaru-guard",
+		"subaru-duck-rush", "subaru-draw-breath", "subaru-tsukkomi",
+		"subaru-combo-boost", "subaru-blue-wave", "subaru-desk-reaction"
+	]
+	var result: Array[String] = drafter.draft(database, pool, deck_ids, [], 3, 6, 202605271)
+
+	_expect_true(_count_cards_in(result, ["subaru-crowd-cover", "subaru-rhythm-guard", "subaru-new-oshi-call"]) >= 3, "Subaru early elite 前若即時防守不足，reward 應集中提供 tempo block 選項")
+	_expect_false(result.has("subaru-hype-call") or result.has("subaru-cheer-recover") or result.has("subaru-blue-wave"), "Subaru early elite 前不應優先推第二張 buff / 續航")
 
 func _test_subaru_midrun_reward_turns_bridge_into_payoff() -> void:
 	var pool := _subaru_pool()
@@ -315,6 +329,13 @@ func _any_card_has_role(card_ids: Array[String], role: String) -> bool:
 		if database.get_card(card_id).get("role_tags", []).has(role):
 			return true
 	return false
+
+func _count_cards_in(card_ids: Array[String], expected_ids: Array[String]) -> int:
+	var count := 0
+	for card_id in card_ids:
+		if expected_ids.has(card_id):
+			count += 1
+	return count
 
 func _expect_true(actual: bool, message: String) -> void:
 	if not actual:
