@@ -992,7 +992,7 @@ func _test_shop_cards_show_price_badges_and_descriptions() -> void:
 		var card_text := _button_child_text(card_button)
 		_expect_true(card_text.contains("特價") or card_text.contains("75g"), "商店卡左上角應顯示依功能計算的購買金額")
 		_expect_false(card_text.contains("購買 45g 2"), "商店卡價格不可再和卡牌費用混在一起")
-		_expect_true(card_text.contains("造成 7 點傷害 2 次"), "商店卡需顯示卡牌功能說明")
+		_expect_true(card_text.contains("造成 8 點傷害 2 次"), "商店卡需顯示卡牌功能說明")
 	var relic_button := _first_shop_button_with_name(shop_buttons, "應援螢光棒")
 	_expect_true(relic_button != null, "商店 relic 商品應存在")
 	if relic_button != null:

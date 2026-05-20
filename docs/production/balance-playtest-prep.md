@@ -22,8 +22,9 @@
 
 manual full-run 仍是 Desktop Build Readiness 與 Creative Director final acceptance 的前置條件。執行時建議記錄：
 
+- 010 起，結算畫面會顯示 `QA 回報摘要`，可直接抄出角色、結果、seed、Boss、死亡樓層、死亡敵人、死亡前 HP、Deck、Relic。
+- 使用者實機回報時，優先補充畫面摘要沒有自動知道的「體感問題」與「UI 問題」。
 - 角色：Subaru / Botan / AZKi 各至少一輪 16 floor random run。
-- 結果：通關、死亡樓層、死亡敵人、死亡前 HP、主要 deck/relic snapshot。
 - 體感：是否常見「能活但殺不掉」、「能殺但擋不住」、「reward 看起來沒有成形方向」。
 - UI：Boss warning、tooltip、hand hover、event option 是否有遮擋或文字 overflow。
 - AZKi 額外項目：`laplus_dash` / `laplus_crash` 實機打出時，AZKi body、Laplus summon、FX 與 Laplus HP label 是否互相遮擋。
@@ -31,5 +32,5 @@ manual full-run 仍是 Desktop Build Readiness 與 Creative Director final accep
 ## 下一步建議
 
 1. 先 merge 009，保持 headless guardrail 與文件入口乾淨。
-2. 下一輪若繼續自動化，優先把 multiseed guardrail 從 4/10 提升到 5/10，並保留目前失敗 seed 的 deck/relic snapshot 輸出。
-3. 下一輪若轉 manual QA，依本文件與 `docs/production/playable-demo-qa-results.md` 回填 Technical QA / Creative Director Review，不要直接標為 release ready。
+2. 下一輪若轉 manual QA，直接截取或抄寫結算畫面的 `QA 回報摘要`，再補體感 / UI 問題。
+3. 下一輪若繼續自動化，可把相同摘要格式延伸到 auto-run log，讓 headless 與玩家回報使用同一套欄位。

@@ -1069,8 +1069,67 @@ func show_run_end(cleared: bool) -> void:
 	_clear_screen()
 	_add_title("通關成功" if cleared else "挑戰失敗")
 	_add_subtitle("Godot MVP route complete." if cleared else "HP 歸零，請再試一次。")
-	_add_button("重新開始", Vector2(0.5, 0.62), Vector2(170, 48), show_character_select)
+	var report_label := _add_label(_manual_qa_report_text(cleared), Vector2(130, 142), Vector2(700, 250), 15, HORIZONTAL_ALIGNMENT_LEFT, Color(0.86, 0.91, 1.0))
+	report_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	report_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_add_button("重新開始", Vector2(0.5, 0.82), Vector2(170, 48), show_character_select)
 	_add_debug_hint()
+
+func _manual_qa_report_text(cleared: bool) -> String:
+	var current_node: Dictionary = run_state.get_current_node(database)
+	var floor := int(current_node.get("floor", 0))
+	var enemy_id := ""
+	var enemy_name := ""
+	if combat != null and not combat.enemy.is_empty():
+		enemy_id = str(combat.enemy.get("id", ""))
+		enemy_name = str(combat.enemy.get("display_name", enemy_id))
+	var hp_before_end: int = run_state.hp
+	if combat != null:
+		hp_before_end = int(combat.player_hp)
+	return "\n".join([
+		"QA 回報摘要",
+		"角色：%s   結果：%s   Seed：%d   Boss：%s" % [_manual_qa_character_label(), "通關" if cleared else "死亡", int(run_state.map_seed), _manual_qa_boss_label()],
+		"死亡樓層：%s   死亡敵人：%s   死亡前 HP：%d" % [_manual_qa_floor_label(floor, cleared), _manual_qa_enemy_label(enemy_id, enemy_name, cleared), hp_before_end],
+		"Deck：%s" % _manual_qa_join_ids(run_state.deck_ids),
+		"Relic：%s" % _manual_qa_join_ids(run_state.relic_ids),
+		"體感問題：",
+		"UI 問題："
+	])
+
+func _manual_qa_character_label() -> String:
+	match run_state.character_id:
+		"subaru":
+			return "Subaru"
+		"botan":
+			return "Botan"
+		"azki":
+			return "AZKi"
+	return run_state.character_id
+
+func _manual_qa_boss_label() -> String:
+	var boss := _random_map_boss_enemy()
+	if boss.is_empty():
+		return "未知"
+	var boss_id := str(boss.get("id", ""))
+	var boss_name := str(boss.get("display_name", boss_id))
+	return "%s (%s)" % [boss_name, boss_id]
+
+func _manual_qa_floor_label(floor: int, cleared: bool) -> String:
+	if cleared:
+		return "-"
+	return str(floor) if floor > 0 else "未知"
+
+func _manual_qa_enemy_label(enemy_id: String, enemy_name: String, cleared: bool) -> String:
+	if cleared:
+		return "-"
+	if enemy_id == "":
+		return "未知"
+	return "%s (%s)" % [enemy_name, enemy_id]
+
+func _manual_qa_join_ids(ids: Array[String]) -> String:
+	if ids.is_empty():
+		return "無"
+	return ", ".join(ids)
 
 func _complete_node() -> void:
 	run_state.complete_current_node(database)
