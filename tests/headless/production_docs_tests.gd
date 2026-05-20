@@ -28,6 +28,8 @@ func _test_balance_playtest_prep_doc_exists() -> void:
 	_expect_true(content.contains("AZKi 5/10"), "prep 文件需記錄 AZKi 目前 multiseed guardrail")
 	_expect_true(content.contains("manual full-run"), "prep 文件需明確銜接 manual full-run gate")
 	_expect_true(content.contains("不做 GUI/manual QA"), "prep 文件需明確本輪不代替 manual QA")
+	_expect_true(content.contains("QA 回報摘要"), "prep 文件需記錄 010 後結算畫面的 manual QA 摘要")
+	_expect_true(content.contains("體感問題"), "prep 文件需提醒使用者補充自動摘要無法知道的體感問題")
 
 func _expect_true(actual: bool, message: String) -> void:
 	if not actual:
