@@ -78,6 +78,7 @@ func _run_auto_case(character_id: String, run_seed: int, required_result: String
 		"combat_summaries": [],
 		"boss_pacing_summary": _empty_boss_pacing_summary(),
 		"route_risk_summary": _empty_route_risk_summary(),
+		"route_risk_events": [],
 		"run_health_flags": [],
 		"result": "failed"
 	}
@@ -238,9 +239,10 @@ func _resolve_chapter_start_event_screen(app: Node, log: Dictionary) -> bool:
 		_fail("chapter_start_event 沒有 draft option")
 		return false
 	var before := _route_snapshot(app)
-	var resolved: bool = app._resolve_chapter_start_option(options[0].duplicate(true))
+	var selected_option: Dictionary = options[0]
+	var resolved: bool = app._resolve_chapter_start_option(selected_option.duplicate(true))
 	await process_frame
-	_record_route_risk_delta(log, before, _route_snapshot(app), true, false)
+	_record_route_risk_delta(log, before, _route_snapshot(app), true, false, "chapter_start_event", 0, selected_option)
 	return resolved
 
 func _play_first_affordable_non_curse_card(app: Node, log: Dictionary, turn_energy: Dictionary) -> bool:
@@ -355,7 +357,7 @@ func _resolve_event_screen(app: Node, log: Dictionary) -> bool:
 		if not _option_starts_battle(option):
 			var resolved: bool = app._resolve_event_option(option.duplicate(true))
 			await process_frame
-			_record_route_risk_delta(log, before, _route_snapshot(app), true, starts_battle)
+			_record_route_risk_delta(log, before, _route_snapshot(app), true, starts_battle, event_id, int(node.get("floor", 0)), option)
 			return resolved
 	for option_variant in options:
 		var option: Dictionary = option_variant
@@ -364,7 +366,7 @@ func _resolve_event_screen(app: Node, log: Dictionary) -> bool:
 			var starts_battle := _option_starts_battle(option)
 			var resolved: bool = app._resolve_event_option(option.duplicate(true))
 			await process_frame
-			_record_route_risk_delta(log, before, _route_snapshot(app), true, starts_battle)
+			_record_route_risk_delta(log, before, _route_snapshot(app), true, starts_battle, event_id, int(node.get("floor", 0)), option)
 			return resolved
 	_fail("%s event 沒有可用選項：%s" % [str(app.run_state.character_id), event_id])
 	return false
@@ -578,7 +580,7 @@ func _count_curses(deck_ids: Array) -> int:
 			count += 1
 	return count
 
-func _record_route_risk_delta(log: Dictionary, before: Dictionary, after: Dictionary, count_event: bool, starts_battle: bool) -> void:
+func _record_route_risk_delta(log: Dictionary, before: Dictionary, after: Dictionary, count_event: bool, starts_battle: bool, event_id: String = "", floor: int = 0, option: Dictionary = {}) -> void:
 	var summary: Dictionary = log.get("route_risk_summary", {})
 	if summary.is_empty():
 		summary = _empty_route_risk_summary()
@@ -599,6 +601,36 @@ func _record_route_risk_delta(log: Dictionary, before: Dictionary, after: Dictio
 	if relic_delta > 0:
 		summary["event_relics_gained"] = int(summary.get("event_relics_gained", 0)) + relic_delta
 	log["route_risk_summary"] = summary
+	if count_event:
+		var route_events: Array = log.get("route_risk_events", [])
+		route_events.append({
+			"event_id": event_id,
+			"floor": floor,
+			"option_label": str(option.get("label", option.get("title", ""))),
+			"hp_delta": hp_delta,
+			"gold_delta": gold_delta,
+			"curse_delta": curse_delta,
+			"relic_delta": relic_delta,
+			"starts_battle": starts_battle,
+			"risk_tags": _route_risk_tags(hp_delta, gold_delta, curse_delta, relic_delta, starts_battle)
+		})
+		log["route_risk_events"] = route_events
+
+func _route_risk_tags(hp_delta: int, gold_delta: int, curse_delta: int, relic_delta: int, starts_battle: bool) -> Array[String]:
+	var tags: Array[String] = []
+	if hp_delta < 0:
+		tags.append("hp_loss")
+	if gold_delta < 0:
+		tags.append("gold_spend")
+	if curse_delta > 0:
+		tags.append("curse_added")
+	if relic_delta > 0:
+		tags.append("relic_gain")
+	if starts_battle:
+		tags.append("event_battle")
+	if tags.is_empty():
+		tags.append("low_risk")
+	return tags
 
 func _record_combat_summary(log: Dictionary, app: Node, enemy_id: String, floor: int, node_type: String, turns: int, start_hp: int, energy_start: Dictionary) -> void:
 	var energy_now: Dictionary = log.get("energy_summary", {})
@@ -679,6 +711,7 @@ func _validate_pacing_and_risk_schema(log: Dictionary) -> void:
 	_expect_true(log.has("combat_summaries"), "%s auto-run log 需包含 combat_summaries" % character_id)
 	_expect_true(log.has("boss_pacing_summary"), "%s auto-run log 需包含 boss_pacing_summary" % character_id)
 	_expect_true(log.has("route_risk_summary"), "%s auto-run log 需包含 route_risk_summary" % character_id)
+	_expect_true(log.has("route_risk_events"), "%s auto-run log 需包含 route_risk_events" % character_id)
 	_expect_true(log.has("run_health_flags"), "%s auto-run log 需包含 run_health_flags" % character_id)
 	var combat_summaries: Array = log.get("combat_summaries", [])
 	_expect_eq(combat_summaries.size(), int(log.get("combat_count", 0)), "%s combat_summaries 數量應等於 combat_count" % character_id)
@@ -692,6 +725,12 @@ func _validate_pacing_and_risk_schema(log: Dictionary) -> void:
 	var route_summary: Dictionary = log.get("route_risk_summary", {})
 	for key in ["event_count", "event_battle_count", "curse_added_count", "event_hp_lost", "event_gold_spent", "event_relics_gained"]:
 		_expect_true(route_summary.has(key), "%s route_risk_summary 需包含 %s" % [character_id, str(key)])
+	var route_events: Array = log.get("route_risk_events", [])
+	_expect_eq(route_events.size(), int(route_summary.get("event_count", 0)), "%s route_risk_events 數量應等於 event_count" % character_id)
+	if not route_events.is_empty():
+		var first_event: Dictionary = route_events[0]
+		for key in ["event_id", "floor", "option_label", "hp_delta", "gold_delta", "curse_delta", "relic_delta", "starts_battle", "risk_tags"]:
+			_expect_true(first_event.has(key), "%s route_risk_events 需包含 %s" % [character_id, str(key)])
 
 func _update_log_from_app(log: Dictionary, app: Node) -> void:
 	var current_node: Dictionary = app.run_state.get_current_node(app.database)
@@ -710,6 +749,7 @@ func _update_qa_report_from_app(log: Dictionary, app: Node) -> void:
 	var snapshot: Dictionary = app._manual_qa_report_snapshot(cleared)
 	snapshot["boss_pacing_summary"] = log.get("boss_pacing_summary", _empty_boss_pacing_summary())
 	snapshot["route_risk_summary"] = log.get("route_risk_summary", _empty_route_risk_summary())
+	snapshot["route_risk_events"] = log.get("route_risk_events", [])
 	snapshot["run_health_flags"] = log.get("run_health_flags", [])
 	log["qa_report"] = snapshot
 	log["qa_report_text"] = app._manual_qa_report_text_from_snapshot(snapshot)
