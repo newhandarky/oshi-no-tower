@@ -27,6 +27,7 @@ func _run() -> void:
 	_test_subaru_early_bridge_cards_have_elite_stability_floor()
 	_test_subaru_starter_payoff_has_elite_damage_floor()
 	_test_azki_late_stability_cards_have_direct_block()
+	_test_azki_pacing_cards_have_damage_floor()
 	_test_enemies_have_valid_actions_and_assets()
 	_test_enemy_pressure_progression_is_balanced()
 	_test_map_nodes_reference_valid_enemies()
@@ -327,6 +328,11 @@ func _test_azki_late_stability_cards_have_direct_block() -> void:
 	for card_id in ["azki-phantom-route", "azki-necro-recall"]:
 		var card := database.get_card(card_id)
 		_expect_true(_card_effect_amount(card, "block") >= 4, "%s 作為 late boss 穩定牌時需提供直接格擋，不可只補 Laplus HP" % card_id)
+
+func _test_azki_pacing_cards_have_damage_floor() -> void:
+	_expect_true(_card_effect_amount(database.get_card("azki-map-shot"), "damage") >= 10, "AZKi starter 座標彈需改善普攻節奏")
+	_expect_true(_card_effect_amount(database.get_card("azki-pinpoint"), "damage") >= 7, "AZKi 精準標記需改善 setup 回合輸出")
+	_expect_true(_card_effect_amount(database.get_card("azki-laplus-dash"), "damage") >= 10, "AZKi Laplus 衝刺需改善中段擊殺效率")
 
 func _test_enemies_have_valid_actions_and_assets() -> void:
 	var allowed_actions := { "attack": true, "block": true, "attack_block": true, "debuff": true, "buff": true }

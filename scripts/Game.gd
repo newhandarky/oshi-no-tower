@@ -580,18 +580,19 @@ func show_chapter_start_event() -> void:
 		chapter_start_options = database.draft_chapter_start_options(CHAPTER_2_ID, run_state.map_seed + run_state.deck_ids.size() + run_state.gold, run_state.gold, _run_curse_count())
 	_add_title(str(event_def.get("title", "Holo Support Desk")))
 	_add_subtitle("HP 已回滿。選一項支援，準備進入演算法深層。")
-	_add_label(str(event_def.get("body", "")), Vector2(180, 110), Vector2(600, 54), 16, HORIZONTAL_ALIGNMENT_CENTER, Color(0.9, 0.94, 1.0))
+	_add_status_strip(Vector2(250, 130), Vector2(460, 24))
+	_add_wrapped_label(str(event_def.get("body", "")), Vector2(180, 158), Vector2(600, 54), 16, HORIZONTAL_ALIGNMENT_CENTER, Color(0.9, 0.94, 1.0))
 	for index in range(chapter_start_options.size()):
 		var option: Dictionary = chapter_start_options[index]
-		var x := 175 + index * 205
+		var x := 168 + index * 208
 		var risk_text := "風險：%s" % _risk_tier_label(str(option.get("risk_tier", "medium")))
-		_add_panel(Vector2(x, 198), Vector2(185, 138), Color(0.05, 0.07, 0.12, 0.86))
-		_add_label(risk_text, Vector2(x + 12, 210), Vector2(160, 24), 13, HORIZONTAL_ALIGNMENT_LEFT, Color(1.0, 0.86, 0.58))
-		var option_label := _wrap_button_text(str(option.get("label", "")), 16)
-		_add_button(option_label, Vector2((x + 92.5) / BASE_SIZE.x, 0.52), Vector2(168, 72), func() -> void:
+		_add_panel(Vector2(x, 230), Vector2(188, 126), Color(0.05, 0.07, 0.12, 0.86))
+		_add_label(risk_text, Vector2(x + 12, 242), Vector2(164, 24), 13, HORIZONTAL_ALIGNMENT_LEFT, Color(1.0, 0.86, 0.58))
+		var option_label := _wrap_button_text(str(option.get("label", "")), 14)
+		var button := _add_button(option_label, Vector2((x + 94.0) / BASE_SIZE.x, 0.58), Vector2(168, 68), func() -> void:
 			_resolve_chapter_start_option(option)
 		)
-	_add_label("Deck %d   Relic %d   Gold %d" % [run_state.deck_ids.size(), run_state.relic_ids.size(), run_state.gold], Vector2(290, 382), Vector2(380, 28), 15, HORIZONTAL_ALIGNMENT_CENTER, Color(0.9, 0.86, 0.62))
+		_configure_wrapped_button(button)
 	_add_debug_hint()
 
 func _resolve_chapter_start_option(option: Dictionary) -> bool:
@@ -634,6 +635,9 @@ func _wrap_button_text(text: String, max_chars: int) -> String:
 		result += character
 		line_length += 1
 	return result
+
+func _add_status_strip(ui_position: Vector2, ui_size: Vector2) -> void:
+	_add_label("HP %d/%d   Gold %d   Deck %d   Relic %d" % [run_state.hp, run_state.max_hp, run_state.gold, run_state.deck_ids.size(), run_state.relic_ids.size()], ui_position, ui_size, 14, HORIZONTAL_ALIGNMENT_CENTER, Color(0.9, 0.86, 0.62))
 
 func show_chest_reward() -> void:
 	current_screen = "chest_reward"
@@ -801,17 +805,25 @@ func show_event(node: Dictionary = {}) -> void:
 	var body := str(event_def.get("body", node.get("body", "一位看起來剛結束長途漂流的 HoloStar 成員需要補給。")))
 	_add_title(title)
 	_add_subtitle(description)
-	_add_panel(Vector2(184, 188), Vector2(592, 168), Color(0.05, 0.07, 0.11, 0.9))
-	_add_label(body, Vector2(216, 206), Vector2(528, 82), 16, HORIZONTAL_ALIGNMENT_CENTER, Color(0.86, 0.9, 1.0))
+	_add_status_strip(Vector2(250, 134), Vector2(460, 24))
+	_add_panel(Vector2(184, 178), Vector2(592, 168), Color(0.05, 0.07, 0.11, 0.9))
+	_add_wrapped_label(body, Vector2(216, 204), Vector2(528, 92), 16, HORIZONTAL_ALIGNMENT_CENTER, Color(0.86, 0.9, 1.0))
 	var options: Array = event_def.get("options", [])
+	var option_width: float = 280.0
+	var option_gap: float = 28.0
+	var total_width: float = option_width * float(options.size()) + option_gap * float(max(0, options.size() - 1))
+	var start_x: float = (BASE_SIZE.x - total_width) / 2.0
 	for index in range(options.size()):
 		var option: Dictionary = options[index]
 		var option_copy := option.duplicate(true)
-		var button := _add_button(str(option.get("label", "")), Vector2(0.34 + index * 0.32, 0.65), Vector2(290, 48), func() -> void:
+		var x: float = start_x + float(index) * (option_width + option_gap)
+		_add_panel(Vector2(x, 354), Vector2(option_width, 74), Color(0.05, 0.06, 0.09, 0.86))
+		var button := _add_button(_wrap_button_text(str(option.get("label", "")), 16), Vector2((x + option_width / 2.0) / BASE_SIZE.x, 0.724), Vector2(option_width, 64), func() -> void:
 			_resolve_event_option(option_copy)
 		)
+		_configure_wrapped_button(button)
 		button.disabled = not _event_option_available(option)
-	_add_relic_summary(Vector2(250, 455), Vector2(460, 24))
+	_add_relic_summary(Vector2(250, 466), Vector2(460, 24))
 	_add_debug_hint()
 
 func _event_option_available(option: Dictionary) -> bool:
@@ -1069,9 +1081,8 @@ func show_run_end(cleared: bool) -> void:
 	_clear_screen()
 	_add_title("通關成功" if cleared else "挑戰失敗")
 	_add_subtitle("Godot MVP route complete." if cleared else "HP 歸零，請再試一次。")
-	var report_label := _add_label(_manual_qa_report_text(cleared), Vector2(130, 142), Vector2(700, 250), 15, HORIZONTAL_ALIGNMENT_LEFT, Color(0.86, 0.91, 1.0))
-	report_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-	report_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var report_label := _add_wrapped_label(_manual_qa_report_text(cleared), Vector2(96, 138), Vector2(660, 286), 14, HORIZONTAL_ALIGNMENT_LEFT, Color(0.86, 0.91, 1.0))
+	report_label.clip_text = true
 	_add_button("重新開始", Vector2(0.5, 0.82), Vector2(170, 48), show_character_select)
 	_add_debug_hint()
 
@@ -1109,7 +1120,9 @@ func _manual_qa_report_snapshot(cleared: bool) -> Dictionary:
 		"defeat_enemy": _manual_qa_enemy_label(enemy_id, enemy_name, cleared),
 		"defeat_hp": hp_before_end,
 		"deck_ids": run_state.deck_ids.duplicate(),
-		"relic_ids": run_state.relic_ids.duplicate()
+		"relic_ids": run_state.relic_ids.duplicate(),
+		"deck_summary": _manual_qa_card_summary(run_state.deck_ids),
+		"relic_summary": _manual_qa_relic_summary(run_state.relic_ids)
 	}
 
 func _manual_qa_report_text_from_snapshot(snapshot: Dictionary) -> String:
@@ -1117,8 +1130,7 @@ func _manual_qa_report_text_from_snapshot(snapshot: Dictionary) -> String:
 		"QA 回報摘要",
 		"角色：%s   結果：%s   Seed：%d   Boss：%s" % [str(snapshot.get("character", "")), str(snapshot.get("result", "")), int(snapshot.get("seed", 0)), str(snapshot.get("boss", "未知"))],
 		"死亡樓層：%s   死亡敵人：%s   死亡前 HP：%d" % [str(snapshot.get("defeat_floor_label", "未知")), str(snapshot.get("defeat_enemy", "未知")), int(snapshot.get("defeat_hp", 0))],
-		"Deck：%s" % _manual_qa_join_ids(snapshot.get("deck_ids", [])),
-		"Relic：%s" % _manual_qa_join_ids(snapshot.get("relic_ids", [])),
+		"主要 deck/relic：%s / %s" % [str(snapshot.get("deck_summary", "無")), str(snapshot.get("relic_summary", "無"))],
 		"體感問題：",
 		"UI 問題："
 	])
@@ -1162,6 +1174,46 @@ func _manual_qa_join_ids(ids: Array) -> String:
 	if ids.is_empty():
 		return "無"
 	return ", ".join(ids)
+
+func _manual_qa_card_summary(ids: Array) -> String:
+	if ids.is_empty():
+		return "無"
+	return _manual_qa_named_summary(ids, true, 7)
+
+func _manual_qa_relic_summary(ids: Array) -> String:
+	if ids.is_empty():
+		return "無"
+	return _manual_qa_named_summary(ids, false, 6)
+
+func _manual_qa_named_summary(ids: Array, is_card: bool, limit: int) -> String:
+	var counts := {}
+	var order: Array[String] = []
+	for raw_id in ids:
+		var item_id := str(raw_id)
+		var display_name := _manual_qa_item_name(item_id, is_card)
+		if not counts.has(display_name):
+			counts[display_name] = 0
+			order.append(display_name)
+		counts[display_name] = int(counts[display_name]) + 1
+	var parts: Array[String] = []
+	for index in range(min(limit, order.size())):
+		var name := order[index]
+		var count := int(counts[name])
+		parts.append("%s x%d" % [name, count] if count > 1 else name)
+	if order.size() > limit:
+		parts.append("另 %d 張" % (order.size() - limit))
+	return "、".join(parts)
+
+func _manual_qa_item_name(item_id: String, is_card: bool) -> String:
+	if is_card:
+		var upgraded := item_id.ends_with("+")
+		var card := database.get_card(item_id)
+		if card.is_empty() and upgraded:
+			card = database.get_card(item_id.substr(0, item_id.length() - 1))
+		var card_name := str(card.get("name", item_id))
+		return "%s+" % card_name if upgraded and not card_name.ends_with("+") else card_name
+	var relic := database.get_relic(item_id)
+	return str(relic.get("name", item_id))
 
 func _complete_node() -> void:
 	run_state.complete_current_node(database)
@@ -2184,6 +2236,9 @@ func _add_label(text: String, ui_position: Vector2, ui_size: Vector2, font_size:
 	label.text = text
 	label.position = ui_position
 	label.size = ui_size
+	label.custom_minimum_size = Vector2.ZERO
+	label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	label.horizontal_alignment = alignment
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", font_size)
@@ -2196,6 +2251,30 @@ func _add_label(text: String, ui_position: Vector2, ui_size: Vector2, font_size:
 	screen_host.add_child(label)
 	return label
 
+func _add_wrapped_label(text: String, ui_position: Vector2, ui_size: Vector2, font_size: int, alignment: HorizontalAlignment, color := Color.WHITE) -> Label:
+	var label := Label.new()
+	label.position = ui_position
+	label.size = ui_size
+	label.custom_minimum_size = Vector2.ZERO
+	label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	label.horizontal_alignment = alignment
+	label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.clip_text = true
+	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.82))
+	label.add_theme_constant_override("shadow_offset_x", 2)
+	label.add_theme_constant_override("shadow_offset_y", 2)
+	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.72))
+	label.add_theme_constant_override("outline_size", 2)
+	label.text = text
+	label.size = ui_size
+	screen_host.add_child(label)
+	return label
+
 func _add_button(text: String, anchor: Vector2, ui_size: Vector2, callback: Callable) -> Button:
 	var button := Button.new()
 	button.text = text
@@ -2204,6 +2283,11 @@ func _add_button(text: String, anchor: Vector2, ui_size: Vector2, callback: Call
 	button.pressed.connect(callback)
 	screen_host.add_child(button)
 	return button
+
+func _configure_wrapped_button(button: Button) -> void:
+	button.clip_text = true
+	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 func _add_card_button(card: Dictionary, ui_position: Vector2, ui_size: Vector2, callback: Callable, prefix := "", hover_enabled := false) -> Button:
 	return _add_card_button_to(screen_host, card, ui_position, ui_size, callback, prefix, hover_enabled)

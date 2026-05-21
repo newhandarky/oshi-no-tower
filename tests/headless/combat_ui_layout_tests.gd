@@ -39,6 +39,7 @@ func _run() -> void:
 	await _test_combat_hand_discard_and_draw_animations_are_wired()
 	await _test_played_card_animates_to_right_before_combat_refresh()
 	await _test_hover_interrupted_by_play_restores_sibling_card_hit_testing()
+	await _test_event_chapter_start_and_run_end_labels_stay_inside_screen()
 	await _test_combat_hand_stays_centered_when_card_count_changes()
 	await _test_intent_icon_path_uses_texture_and_missing_icon_falls_back()
 	await _test_reward_cards_do_not_hover_enlarge()
@@ -746,22 +747,31 @@ func _test_combat_hand_is_fanned_and_hover_enlarges_topmost() -> void:
 		app._set_card_hovered(target, true)
 		_expect_eq(float(target.get_meta("hover_lift_duration", -1.0)), 0.1, "hover 第一段應用 0.1 秒抬起卡牌")
 		_expect_eq(float(target.get_meta("hover_expand_duration", -1.0)), 0.3, "hover 展開動畫應為 0.3 秒")
+		_expect_eq(target.position, base_position, "hover 不應改變原卡 hitbox 位置，避免 enter/exit 抖動")
+		_expect_eq(target.size, target.get_meta("base_size"), "hover 不應改變原卡 hitbox 尺寸，點擊目標需穩定")
 		await _wait_seconds(0.12)
-		_expect_true(target.position.y < base_position.y, "hover 第一段應先沿原角度抬起")
+		var preview := _find_child_by_name(app.screen_host, "CombatHoverPreview") as Button
+		_expect_true(preview != null, "hover 應建立非互動式放大預覽")
+		if preview != null:
+			_expect_eq(preview.mouse_filter, Control.MOUSE_FILTER_IGNORE, "hover preview 不應吃滑鼠，點擊仍由原手牌處理")
+			_expect_true(preview.position.y < base_position.y, "hover preview 應顯示在原卡上方")
 		_expect_eq(target.rotation_degrees, base_rotation, "hover 抬起時不應轉正")
 		await _wait_seconds(0.25)
 		_expect_eq(target.scale, Vector2.ONE, "hover 時不應用 Control scale 放大，避免文字模糊")
-		_expect_true(target.size.x > target.get_meta("base_size").x and target.size.y > target.get_meta("base_size").y, "hover 時卡牌應以實際 size 放大")
+		preview = _find_child_by_name(app.screen_host, "CombatHoverPreview") as Button
+		_expect_true(preview != null and preview.size.x > target.size.x and preview.size.y > target.size.y, "hover preview 應以實際 size 放大")
 		_expect_eq(target.rotation_degrees, base_rotation, "hover 放大後仍應保留原本扇形角度")
 		_expect_eq(target.position.x, base_position.x, "hover 時卡牌不應橫向位移，避免滑鼠 enter/exit 閃爍")
-		_expect_eq(target.position.y + target.size.y, 540.0, "hover 時卡牌底部應貼齊畫面下緣，避免說明文字被切掉")
+		if preview != null:
+			_expect_eq(preview.position.y + preview.size.y, 540.0, "hover preview 底部應貼齊畫面下緣，避免說明文字被切掉")
 		_expect_eq(dimmed_sibling.modulate, Color.WHITE, "hover 前景卡時其他手牌不應變透明")
-		_expect_eq(dimmed_sibling.mouse_filter, Control.MOUSE_FILTER_IGNORE, "hover 前景卡時其他手牌應暫停滑鼠判定，避免互相搶 hover")
-		var desc_label := _find_child_by_name(target, "DescriptionLabel") as Label
+		_expect_eq(dimmed_sibling.mouse_filter, Control.MOUSE_FILTER_STOP, "hover preview 不改變其他手牌判定，避免點擊需要多次")
+		var desc_label := _find_child_by_name(preview, "DescriptionLabel") as Label
 		_expect_true(desc_label != null, "hover 卡牌需要描述文字")
 		if desc_label != null:
 			_expect_true(desc_label.get_theme_font_size("font_size") > 13, "hover 後描述文字應提高字級，而不是整張卡縮放")
-		_expect_true(target.z_index >= 1000, "hover 時卡牌應在最上層")
+		if preview != null:
+			_expect_true(preview.z_index >= 1000, "hover preview 應在最上層")
 		app._set_card_hovered(target, false)
 		_expect_eq(float(target.get_meta("hover_shrink_duration", -1.0)), 0.3, "hover 收回動畫應為 0.3 秒")
 		await _wait_seconds(0.35)
@@ -771,6 +781,7 @@ func _test_combat_hand_is_fanned_and_hover_enlarges_topmost() -> void:
 		_expect_eq(target.rotation_degrees, base_rotation, "離開 hover 應還原原本角度")
 		_expect_eq(dimmed_sibling.modulate, Color.WHITE, "離開 hover 後其他手牌應維持不透明")
 		_expect_eq(dimmed_sibling.mouse_filter, Control.MOUSE_FILTER_STOP, "離開 hover 後其他手牌應恢復滑鼠判定")
+		_expect_true(_find_child_by_name(app.screen_host, "CombatHoverPreview") == null, "離開 hover 後 preview 應移除")
 	app.queue_free()
 
 func _test_combat_hover_card_keeps_description_readable() -> void:
@@ -788,12 +799,41 @@ func _test_combat_hover_card_keeps_description_readable() -> void:
 		var target := card_buttons[2]
 		app._set_card_hovered(target, true)
 		await _wait_seconds(0.55)
-		var desc_label := _find_child_by_name(target, "DescriptionLabel") as Label
+		var preview := _find_child_by_name(app.screen_host, "CombatHoverPreview") as Button
+		var desc_label := _find_child_by_name(preview, "DescriptionLabel") as Label
 		_expect_true(desc_label != null, "hover 卡牌需要描述文字")
 		if desc_label != null:
-			_expect_true(desc_label.size.y >= target.size.y * 0.24, "hover 卡牌描述區需保留足夠比例，盡量完整呈現效果")
-			_expect_true(desc_label.position.y + desc_label.size.y <= target.size.y - 12.0, "hover 卡牌描述不可超出底部")
+			_expect_true(desc_label.size.y >= preview.size.y * 0.24, "hover 卡牌描述區需保留足夠比例，盡量完整呈現效果")
+			_expect_true(desc_label.position.y + desc_label.size.y <= preview.size.y - 12.0, "hover 卡牌描述不可超出底部")
 		app._set_card_hovered(target, false)
+	app.queue_free()
+
+func _test_event_chapter_start_and_run_end_labels_stay_inside_screen() -> void:
+	var app = MainScene.instantiate()
+	root.add_child(app)
+	await process_frame
+
+	app.run_state.start_random_run(app.database, "subaru", 2026052012)
+	app.run_state.gold = 213
+	app.show_event({ "event_id": "recommendation-auction" })
+	await process_frame
+	_expect_true(_screen_text(app).contains("HP "), "事件畫面應顯示目前 HP 以利選擇")
+	_expect_true(_screen_text(app).contains("Gold 213"), "事件畫面應顯示目前 Gold 以利選擇")
+	_expect_controls_inside_screen(app, "event")
+
+	app.show_chapter_start_event()
+	await process_frame
+	_expect_true(_screen_text(app).contains("HP "), "Chapter start event 應顯示目前 HP")
+	_expect_true(_screen_text(app).contains("Gold "), "Chapter start event 應顯示目前 Gold")
+	_expect_controls_inside_screen(app, "chapter_start_event")
+
+	app.run_state.deck_ids.append_array(["subaru-strike+", "subaru-strike+", "subaru-draw-breath+", "subaru-blue-wave", "subaru-new-oshi-call", "subaru-crowd-cover"])
+	app.run_state.relic_ids.append_array(["duck-whistle", "shishiro-crosshair", "healing-chat", "energy-drink", "golden-superchat", "route-stamp"])
+	app.show_run_end(true)
+	await process_frame
+	_expect_true(_screen_text(app).contains("主要 deck/relic"), "結算畫面應用截圖友善的主要 deck/relic 欄位")
+	_expect_false(_screen_text(app).contains("subaru-strike+"), "結算畫面 deck/relic 摘要應優先使用中文名稱")
+	_expect_controls_inside_screen(app, "run_end")
 	app.queue_free()
 
 func _test_combat_hand_discard_and_draw_animations_are_wired() -> void:
@@ -877,7 +917,7 @@ func _test_hover_interrupted_by_play_restores_sibling_card_hit_testing() -> void
 		app._set_card_hovered(target, true)
 		await _wait_seconds(0.37)
 		_expect_eq(sibling.modulate, Color.WHITE, "hover 時其他手牌不應被透明化")
-		_expect_eq(sibling.mouse_filter, Control.MOUSE_FILTER_IGNORE, "hover 時其他手牌應暫停滑鼠判定")
+		_expect_eq(sibling.mouse_filter, Control.MOUSE_FILTER_STOP, "hover preview 不應鎖住其他手牌判定")
 		var tween = app.combat_hand_view.animate_played_card_to_right(app.screen_host, target, 1)
 		_expect_eq(sibling.modulate, Color.WHITE, "hover 被打牌中斷時，其他手牌仍應維持不透明")
 		_expect_eq(sibling.mouse_filter, Control.MOUSE_FILTER_STOP, "hover 被打牌中斷時，其他手牌應立即恢復滑鼠判定")
@@ -1199,6 +1239,8 @@ func _has_color_rect(app: Node, expected_position: Vector2, expected_size: Vecto
 	return false
 
 func _find_child_by_name(node: Node, child_name: String) -> Node:
+	if node == null:
+		return null
 	for child in node.get_children():
 		if str(child.name) == child_name or str(child.name).begins_with("%s" % child_name):
 			return child
@@ -1221,6 +1263,26 @@ func _child_labels(node: Node) -> Array[Label]:
 		if child is Label:
 			labels.append(child as Label)
 	return labels
+
+func _expect_controls_inside_screen(app: Node, screen_name: String) -> void:
+	var controls: Array[Control] = []
+	_collect_layout_controls(app.screen_host, controls)
+	for control in controls:
+		if not control.visible:
+			continue
+		if control.size.x <= 0.0 or control.size.y <= 0.0:
+			continue
+		var rect := Rect2(control.global_position, control.size)
+		_expect_true(rect.position.x >= -1.0, "%s control 不應超出左界：%s" % [screen_name, str(control.name)])
+		_expect_true(rect.position.y >= -1.0, "%s control 不應超出上界：%s" % [screen_name, str(control.name)])
+		_expect_true(rect.position.x + rect.size.x <= 961.0, "%s control 不應超出右界：%s" % [screen_name, str(control.name)])
+		_expect_true(rect.position.y + rect.size.y <= 541.0, "%s control 不應超出下界：%s" % [screen_name, str(control.name)])
+
+func _collect_layout_controls(node: Node, result: Array[Control]) -> void:
+	for child in node.get_children():
+		if child is Label or child is Button or child is ScrollContainer:
+			result.append(child as Control)
+		_collect_layout_controls(child, result)
 
 func _reward_card_buttons(app: Node) -> Array[Button]:
 	var result: Array[Button] = []

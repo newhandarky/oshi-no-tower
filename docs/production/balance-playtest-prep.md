@@ -22,13 +22,15 @@
 
 manual full-run 仍是 Desktop Build Readiness 與 Creative Director final acceptance 的前置條件。執行時建議記錄：
 
-- 010 起，結算畫面會顯示 `QA 回報摘要`，可直接抄出角色、結果、seed、Boss、死亡樓層、死亡敵人、死亡前 HP、Deck、Relic。
+- 012 起，結算畫面會顯示截圖友善的 `QA 回報摘要`，可直接截圖取得角色、結果、seed、Boss、死亡樓層、死亡敵人、死亡前 HP、主要 deck/relic、體感問題與 UI 問題。畫面上的 deck/relic 以中文名稱摘要顯示，完整 card / relic id 仍保留在 headless `qa_report`。
 - 011 起，headless `playable_demo_auto_run_log` 與 `multiseed_balance_probe_log` 也會輸出同格式的 `qa_report` / `qa_report_text`，玩家回報與自動測試可用同一套欄位比對。
 - 使用者實機回報時，優先補充畫面摘要沒有自動知道的「體感問題」與「UI 問題」。
 - 角色：Subaru / Botan / AZKi 各至少一輪 16 floor random run。
 - 體感：是否常見「能活但殺不掉」、「能殺但擋不住」、「reward 看起來沒有成形方向」。
 - UI：Boss warning、tooltip、hand hover、event option 是否有遮擋或文字 overflow。
-- AZKi 額外項目：`laplus_dash` / `laplus_crash` 實機打出時，AZKi body、Laplus summon、FX 與 Laplus HP label 是否互相遮擋。
+- 012 起，事件與 Chapter start event 會顯示 HP / Gold / Deck / Relic 狀態列；手測事件選項時可直接看畫面判斷代價是否合理。
+- 012 起，戰鬥手牌 hover 改為非互動 `CombatHoverPreview`，原卡 hitbox 固定；手測時仍需留意是否有實機點擊抖動，但 headless guard 已會擋主要跑版與 hover hitbox 回退。
+- AZKi 額外項目：`laplus_dash` / `laplus_crash` 實機打出時，AZKi body、Laplus summon、FX 與 Laplus HP label 是否互相遮擋；Laplus 在敵方回合倒下後，下一個玩家回合應以 1 HP 復活。
 
 ## 下一步建議
 

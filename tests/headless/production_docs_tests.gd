@@ -31,6 +31,9 @@ func _test_balance_playtest_prep_doc_exists() -> void:
 	_expect_true(content.contains("QA 回報摘要"), "prep 文件需記錄 010 後結算畫面的 manual QA 摘要")
 	_expect_true(content.contains("體感問題"), "prep 文件需提醒使用者補充自動摘要無法知道的體感問題")
 	_expect_true(content.contains("qa_report"), "prep 文件需記錄 011 後 headless log 的 QA report 欄位")
+	_expect_true(content.contains("主要 deck/relic"), "prep 文件需記錄 012 後結算畫面的中文 deck/relic 摘要")
+	_expect_true(content.contains("CombatHoverPreview"), "prep 文件需記錄 012 後手牌 hover preview 規則")
+	_expect_true(content.contains("Laplus 在敵方回合倒下後"), "prep 文件需記錄 012 後 Laplus 復活手測重點")
 
 func _expect_true(actual: bool, message: String) -> void:
 	if not actual:
