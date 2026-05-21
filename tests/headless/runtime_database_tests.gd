@@ -30,6 +30,8 @@ func _run() -> void:
 	_test_azki_pacing_cards_have_damage_floor()
 	_test_015_subaru_midrun_defense_cards_have_no_energy_buff()
 	_test_015_azki_payoff_cards_have_boss_pacing_floor()
+	_test_018_subaru_midrun_bridge_cards_do_not_add_energy()
+	_test_018_azki_late_payoff_cards_have_pacing_floor()
 	_test_enemies_have_valid_actions_and_assets()
 	_test_enemy_pressure_progression_is_balanced()
 	_test_map_nodes_reference_valid_enemies()
@@ -359,6 +361,25 @@ func _test_015_azki_payoff_cards_have_boss_pacing_floor() -> void:
 	_expect_true(_card_conditional_summon_hp_base(laplus_release, true) >= 8, "015 AZKi laplus-release+ 條件追加 base 應補收束")
 	_expect_true(_card_summon_hp_base(laplus_overflow) >= 14, "015 AZKi laplus-overflow base 應補 boss 收束")
 	_expect_true(_card_summon_hp_base(laplus_overflow, true) >= 18, "015 AZKi laplus-overflow+ base 應補 boss 收束")
+
+func _test_018_subaru_midrun_bridge_cards_do_not_add_energy() -> void:
+	var encore := database.get_card("subaru-encore-recall")
+	var afterimage := database.get_card("subaru-afterimage-table")
+	_expect_true(_card_effect_amount(encore, "block") >= 6, "018 Subaru encore-recall 應補中段回收防守")
+	_expect_true(_card_upgrade_effect_amount(encore, "block") >= 9, "018 Subaru encore-recall+ 應補中段回收防守")
+	_expect_true(_card_conditional_block_amount(afterimage) >= 6, "018 Subaru afterimage-table 條件格擋應補 payoff 安全性")
+	_expect_true(_card_conditional_block_amount(afterimage, true) >= 9, "018 Subaru afterimage-table+ 條件格擋應補 payoff 安全性")
+	_expect_false(_card_has_effect(encore, "energy"), "018 不應用 encore-recall 增加 Subaru 能量")
+	_expect_false(_card_has_effect(afterimage, "energy"), "018 不應用 afterimage-table 增加 Subaru 能量")
+
+func _test_018_azki_late_payoff_cards_have_pacing_floor() -> void:
+	var combo := database.get_card("azki-laplus-combo")
+	var finale := database.get_card("azki-necrobinder-finale")
+	_expect_true(_card_damage_total(combo) >= 22, "018 AZKi laplus-combo 應小幅補 boss pacing")
+	_expect_true(_card_effect_amount(finale, "damage") >= 24, "018 AZKi finale 基礎傷害應補 late boss 收束")
+	_expect_true(_card_conditional_damage_amount(finale) >= 12, "018 AZKi finale Laplus 存活追加傷害應補 late boss 收束")
+	_expect_true(_card_upgrade_effect_amount(finale, "damage") >= 28, "018 AZKi finale+ 基礎傷害應補 late boss 收束")
+	_expect_true(_card_conditional_damage_amount(finale, true) >= 14, "018 AZKi finale+ Laplus 存活追加傷害應補 late boss 收束")
 
 func _test_enemies_have_valid_actions_and_assets() -> void:
 	var allowed_actions := { "attack": true, "block": true, "attack_block": true, "debuff": true, "buff": true }
@@ -997,6 +1018,28 @@ func _card_conditional_summon_hp_base(card: Dictionary, upgraded := false) -> in
 			var nested: Dictionary = nested_variant
 			if str(nested.get("type", "")) == "summon_hp_damage":
 				return int(nested.get("base", 0))
+	return 0
+
+func _card_conditional_block_amount(card: Dictionary, upgraded := false) -> int:
+	var effects: Array = card.get("upgrade_effects", []) if upgraded else card.get("effects", [])
+	for effect in effects:
+		if str(effect.get("type", "")) != "conditional":
+			continue
+		for nested_variant in effect.get("effects", []):
+			var nested: Dictionary = nested_variant
+			if str(nested.get("type", "")) == "block":
+				return int(nested.get("amount", 0))
+	return 0
+
+func _card_conditional_damage_amount(card: Dictionary, upgraded := false) -> int:
+	var effects: Array = card.get("upgrade_effects", []) if upgraded else card.get("effects", [])
+	for effect in effects:
+		if str(effect.get("type", "")) != "conditional":
+			continue
+		for nested_variant in effect.get("effects", []):
+			var nested: Dictionary = nested_variant
+			if str(nested.get("type", "")) == "damage":
+				return int(nested.get("amount", 0)) * max(1, int(nested.get("hits", 1)))
 	return 0
 
 func _collect_v1_effect_schema(effect: Dictionary, schema_flags: Dictionary) -> void:

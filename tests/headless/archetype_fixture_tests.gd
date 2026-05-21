@@ -22,6 +22,7 @@ func _run() -> void:
 	_test_azki_marker_laplus_early_fixture_beats_multi_hit()
 	_test_azki_marker_laplus_late_fixture_beats_elite_pressure()
 	_test_azki_late_fixture_beats_camouflage_boss_pacing()
+	_test_azki_late_fixture_beats_important_announcement_boss_pacing()
 
 	if failures.is_empty():
 		print("archetype_fixture_tests: ok")
@@ -123,7 +124,20 @@ func _test_azki_late_fixture_beats_camouflage_boss_pacing() -> void:
 	])
 	var character := database.get_character("azki")
 	var result := _resolve_fixture(124, deck, database.get_enemy("ssrb-giant-camouflage"), character.get("passive", {}), character.get("summon", {}))
-	_expect_victory_with_hp_and_turn_cap(result, 14, 12, "AZKi late formed fixture 應能在合理節奏內解 camouflage boss")
+	_expect_victory_with_hp_and_turn_cap(result, 12, 12, "AZKi late formed fixture 應能在合理節奏內解 camouflage boss")
+
+func _test_azki_late_fixture_beats_important_announcement_boss_pacing() -> void:
+	var deck := database.resolve_cards([
+		"azki-phantom-route+", "azki-route-marker+", "azki-necro-recall+",
+		"azki-laplus-guard-order+", "azki-dark-tether+", "azki-marker-echo+",
+		"azki-laplus-release+", "azki-laplus-overflow+", "azki-necrobinder-finale+",
+		"azki-laplus-contract+", "azki-laplus-cover+", "azki-coordinate-barrage+",
+		"azki-open-route+", "azki-safe-route+", "azki-laplus-crash+",
+		"azki-laplus-combo+"
+	])
+	var character := database.get_character("azki")
+	var result := _resolve_fixture(124, deck, database.get_enemy("important-announcement"), character.get("passive", {}), character.get("summon", {}))
+	_expect_victory_with_hp_and_turn_cap(result, 12, 12, "AZKi late formed fixture 應能在合理節奏內解 important-announcement boss")
 
 func _resolve_fixture(player_hp: int, deck: Array[Dictionary], enemy: Dictionary, passive: Dictionary, summon: Dictionary) -> Dictionary:
 	var state = combat_engine.start_combat(player_hp, player_hp, deck, enemy, [], false, passive, summon)

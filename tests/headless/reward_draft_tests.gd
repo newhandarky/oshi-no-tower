@@ -26,6 +26,9 @@ func _run() -> void:
 	_test_subaru_midrun_reward_turns_bridge_into_payoff()
 	_test_azki_midrun_reward_turns_laplus_bridge_into_payoff()
 	_test_azki_midrun_reward_frontloads_payoff_before_late_boss()
+	_test_018_azki_late_reward_frontloads_rare_payoff_if_missing()
+	_test_018_subaru_midrun_reward_frontloads_bridge_without_energy()
+	_test_018_botan_reward_guardrail_remains_defense_or_control()
 	_test_botan_midrun_reward_limits_repeat_rare_payoff()
 	_test_botan_midrun_reward_breaks_kill_zone_cover_reload_loop()
 	_test_botan_depth_balance_does_not_push_extra_payoff()
@@ -194,6 +197,48 @@ func _test_azki_midrun_reward_frontloads_payoff_before_late_boss() -> void:
 
 	_expect_true(result.has("azki-laplus-overflow") or result.has("azki-laplus-release") or result.has("azki-necrobinder-finale") or result.has("azki-laplus-crash") or result.has("azki-laplus-combo"), "AZKi floor 7-11 已有 marker + Laplus bridge 時，reward 需提前提供 payoff/scaling")
 	_expect_false(result.has("azki-laplus-contract") and result.has("azki-safe-route"), "AZKi mid-run 不應同時繼續塞純防守橋接而缺收束")
+
+func _test_018_azki_late_reward_frontloads_rare_payoff_if_missing() -> void:
+	var pool := _azki_pool()
+	var deck_ids := [
+		"azki-map-shot", "azki-map-shot", "azki-map-shot",
+		"azki-guard", "azki-guard", "azki-guard",
+		"azki-pinpoint", "azki-route-marker", "azki-marker-echo",
+		"azki-laplus-guard-order", "azki-laplus-contract", "azki-dark-tether",
+		"azki-phantom-route", "azki-necro-recall"
+	]
+	var result: Array[String] = drafter.draft(database, pool, deck_ids, [], 3, 12, 202605291)
+
+	_expect_true(result.has("azki-necrobinder-finale") or result.has("azki-laplus-combo") or result.has("azki-laplus-release"), "018 AZKi floor >= 10 已有 marker + Laplus bridge 但缺收束時，reward 應 frontload rare/payoff")
+	_expect_false(result.has("azki-laplus-guard-order") and result.has("azki-laplus-contract"), "018 AZKi late reward 不應回到重複 Laplus guard")
+
+func _test_018_subaru_midrun_reward_frontloads_bridge_without_energy() -> void:
+	var pool := _subaru_pool()
+	var deck_ids := [
+		"subaru-strike", "subaru-strike", "subaru-strike",
+		"subaru-guard", "subaru-guard", "subaru-guard",
+		"subaru-duck-rush", "subaru-draw-breath", "subaru-tsukkomi",
+		"subaru-combo-boost", "subaru-opening-quack", "subaru-duck-tempo",
+		"subaru-blue-wave", "subaru-cheer-recover"
+	]
+	var result: Array[String] = drafter.draft(database, pool, deck_ids, [], 3, 9, 202605292)
+
+	_expect_true(result.has("subaru-encore-recall") or result.has("subaru-afterimage-table") or result.has("subaru-crowd-cover"), "018 Subaru floor 7-11 cheap-chain 有 HP / 防守壓力時應補 bridge/defense")
+	_expect_false(result.has("subaru-blue-wave") or result.has("subaru-cheer-recover"), "018 Subaru 不應優先推第二張純 energy / sustain")
+
+func _test_018_botan_reward_guardrail_remains_defense_or_control() -> void:
+	var pool := _botan_pool()
+	var deck_ids := [
+		"botan-shot", "botan-shot", "botan-shot",
+		"botan-cover", "botan-cover", "botan-cover",
+		"botan-burst", "botan-reload", "botan-mark",
+		"botan-kill-zone", "botan-cover-reload", "botan-perfect-line",
+		"botan-kill-zone", "botan-cover-reload"
+	]
+	var result: Array[String] = drafter.draft(database, pool, deck_ids, [], 3, 10, 202605293)
+
+	_expect_false(result.has("botan-perfect-line") or result.has("botan-kill-zone") or result.has("botan-cover-reload"), "018 不應讓 Botan reward 退回重複 payoff/setup/bridge")
+	_expect_true(result.has("botan-overwatch") or result.has("botan-clean-scope") or result.has("botan-flashbang-round") or result.has("botan-fortified-cover") or result.has("botan-counter-line") or result.has("botan-precise-cover"), "018 Botan guardrail 應維持防守 / 控制 / 反擊")
 
 func _test_botan_midrun_reward_limits_repeat_rare_payoff() -> void:
 	var pool := _botan_pool()
