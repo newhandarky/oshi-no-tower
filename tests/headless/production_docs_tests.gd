@@ -35,6 +35,8 @@ func _test_balance_playtest_prep_doc_exists() -> void:
 	_expect_true(content.contains("CombatHoverPreview"), "prep 文件需記錄 012 後手牌 hover preview 規則")
 	_expect_true(content.contains("Laplus 在敵方回合倒下後"), "prep 文件需記錄 012 後 Laplus 復活手測重點")
 	_expect_true(content.contains("multiseed_balance_probe_failure_cases"), "prep 文件需記錄 013 後 multiseed 失敗案例分群輸出")
+	_expect_true(content.contains("multiseed_balance_probe_failure_analysis"), "prep 文件需記錄 014 後 multiseed 失敗分析輸出")
+	_expect_true(content.contains("likely_issues"), "prep 文件需記錄 014 後 failure analysis 的 likely_issues")
 	_expect_true(content.contains("不要在沒有玩家新回報時大幅調整敵人或 Botan"), "prep 文件需保護 013 後下一步不要無根據 buff / nerf")
 
 func _expect_true(actual: bool, message: String) -> void:
