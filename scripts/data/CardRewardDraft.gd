@@ -170,6 +170,14 @@ func _subaru_natural_balance_bonus(card: Dictionary, deck_signal: Dictionary, fl
 	if cheap_chain_count < 3:
 		return 0.0
 	var card_id := str(card.get("id", ""))
+	if floor >= 7 and floor <= 11:
+		var defense_count := int(deck_signal.get("role:defense", 0))
+		var bridge_count := int(deck_signal.get("role:bridge", 0))
+		if defense_count < 5 or bridge_count < 4:
+			if card_id in ["subaru-encore-recall", "subaru-afterimage-table", "subaru-crowd-cover"]:
+				return 92.0
+			if card_id in ["subaru-blue-wave", "subaru-cheer-recover", "subaru-unstoppable-cheer"]:
+				return -55.0
 	if floor >= 7 and int(deck_signal.get("role:defense", 0)) >= 3 and int(deck_signal.get("role:payoff", 0)) < 3:
 		if card_id in ["subaru-table-slam-loop", "subaru-afterimage-table", "subaru-unstoppable-cheer"]:
 			return 28.0
@@ -292,6 +300,11 @@ func _azki_midrun_payoff_bonus(card: Dictionary, deck_signal: Dictionary, floor:
 	if int(deck_signal.get("laplus_guard", 0)) < 2 or int(deck_signal.get("marker_loop", 0)) < 2:
 		return 0.0
 	var card_id := str(card.get("id", ""))
+	if floor >= 10 and _azki_existing_laplus_payoff_count(deck_signal) < 1:
+		if card_id in ["azki-necrobinder-finale", "azki-laplus-combo", "azki-laplus-release"]:
+			return 128.0
+		if card_id in ["azki-laplus-guard-order", "azki-laplus-contract", "azki-safe-route"]:
+			return -42.0
 	if _azki_existing_laplus_payoff_count(deck_signal) >= 2 and card_id in ["azki-laplus-cover", "azki-laplus-reposition", "azki-safe-route", "azki-coordinate-shield", "azki-phantom-route", "azki-necro-recall", "azki-laplus-guard-order", "azki-laplus-contract", "azki-dark-tether"]:
 		return 138.0
 	if card_id in ["azki-laplus-overflow", "azki-necrobinder-finale", "azki-laplus-crash", "azki-laplus-combo", "azki-laplus-release"]:

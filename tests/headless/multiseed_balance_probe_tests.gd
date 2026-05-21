@@ -87,6 +87,10 @@ func _run_auto_case(character_id: String, run_seed: int) -> void:
 		"qa_report": {},
 		"qa_report_text": "",
 		"energy_summary": _empty_energy_summary(),
+		"combat_summaries": [],
+		"boss_pacing_summary": _empty_boss_pacing_summary(),
+		"route_risk_summary": _empty_route_risk_summary(),
+		"run_health_flags": [],
 		"result": "failed"
 	}
 
@@ -147,9 +151,9 @@ func _advance_current_screen(app: Node, log: Dictionary, step_seed: int) -> bool
 			await process_frame
 			return true
 		"event":
-			return await _resolve_event_screen(app)
+			return await _resolve_event_screen(app, log)
 		"chapter_start_event":
-			return await _resolve_chapter_start_event_screen(app)
+			return await _resolve_chapter_start_event_screen(app, log)
 		"event_remove_selection":
 			var removed: bool = app._event_remove_card_at_index(_first_removable_card_index(app), 1)
 			await process_frame
@@ -200,6 +204,12 @@ func _resolve_combat_screen(app: Node, log: Dictionary) -> bool:
 	log["combat_start_deck_ids"] = app.run_state.deck_ids.duplicate()
 	log["combat_start_relic_ids"] = app.run_state.relic_ids.duplicate()
 	_start_energy_combat(log)
+	var combat_energy_start: Dictionary = (log.get("energy_summary", {}) as Dictionary).duplicate(true)
+	var current_node: Dictionary = app.run_state.get_current_node(app.database)
+	var combat_floor := int(current_node.get("floor", 0))
+	var combat_node_type := str(current_node.get("type", "combat"))
+	var enemy_id := str(app.combat.enemy.get("id", ""))
+	var combat_start_hp := int(app.run_state.hp)
 
 	var turns := 0
 	while turns < MAX_COMBAT_TURNS and str(app.combat.outcome) == "ongoing":
@@ -217,6 +227,7 @@ func _resolve_combat_screen(app: Node, log: Dictionary) -> bool:
 	if str(app.combat.outcome) == "ongoing":
 		_fail("%s seed %d combat 超過 guardrail：%s" % [str(app.run_state.character_id), int(log.get("seed", 0)), str(app.combat.enemy.get("id", ""))])
 		return false
+	_record_combat_summary(log, app, enemy_id, combat_floor, combat_node_type, turns, combat_start_hp, combat_energy_start)
 	if str(app.combat.outcome) == "defeat":
 		log["defeat_enemy_id"] = str(app.combat.enemy.get("id", ""))
 		log["defeat_floor"] = int(app.run_state.get_current_node(app.database).get("floor", 0))
@@ -246,7 +257,7 @@ func _resolve_reward_screen(app: Node) -> bool:
 	await process_frame
 	return true
 
-func _resolve_event_screen(app: Node) -> bool:
+func _resolve_event_screen(app: Node, log: Dictionary) -> bool:
 	var node: Dictionary = app.run_state.get_current_node(app.database)
 	var event_id := str(node.get("event_id", "holostar-sponsor"))
 	var event_def: Dictionary = app.database.get_event(event_id)
@@ -255,26 +266,34 @@ func _resolve_event_screen(app: Node) -> bool:
 		var option: Dictionary = option_variant
 		if not app._event_option_available(option):
 			continue
+		var before := _route_snapshot(app)
+		var starts_battle := _option_starts_battle(option)
 		if not _option_starts_battle(option):
 			var resolved: bool = app._resolve_event_option(option.duplicate(true))
 			await process_frame
+			_record_route_risk_delta(log, before, _route_snapshot(app), true, starts_battle)
 			return resolved
 	for option_variant in options:
 		var option: Dictionary = option_variant
 		if app._event_option_available(option):
+			var before := _route_snapshot(app)
+			var starts_battle := _option_starts_battle(option)
 			var resolved: bool = app._resolve_event_option(option.duplicate(true))
 			await process_frame
+			_record_route_risk_delta(log, before, _route_snapshot(app), true, starts_battle)
 			return resolved
 	_fail("%s seed %d event 沒有可用選項：%s" % [str(app.run_state.character_id), int(node.get("seed", 0)), event_id])
 	return false
 
-func _resolve_chapter_start_event_screen(app: Node) -> bool:
+func _resolve_chapter_start_event_screen(app: Node, log: Dictionary) -> bool:
 	var options: Array = app.chapter_start_options
 	if options.is_empty():
 		_fail("chapter_start_event 沒有 draft option")
 		return false
+	var before := _route_snapshot(app)
 	var resolved: bool = app._resolve_chapter_start_option(options[0].duplicate(true))
 	await process_frame
+	_record_route_risk_delta(log, before, _route_snapshot(app), true, false)
 	return resolved
 
 func _play_first_affordable_non_curse_card(app: Node, turn_energy: Dictionary) -> bool:
@@ -453,6 +472,145 @@ func _apply_economy_flags(log: Dictionary) -> void:
 	summary["economy_flags"] = flags
 	log["energy_summary"] = summary
 
+func _empty_boss_pacing_summary() -> Dictionary:
+	return {
+		"boss_id": "",
+		"turns": 0,
+		"start_hp": 0,
+		"end_hp": 0,
+		"over_threshold": false
+	}
+
+func _empty_route_risk_summary() -> Dictionary:
+	return {
+		"event_count": 0,
+		"event_battle_count": 0,
+		"curse_added_count": 0,
+		"event_hp_lost": 0,
+		"event_gold_spent": 0,
+		"event_relics_gained": 0
+	}
+
+func _empty_character_pacing_summary() -> Dictionary:
+	return {
+		"boss_combat_count": 0,
+		"total_boss_turns": 0,
+		"average_boss_turns": 0.0,
+		"max_boss_turns": 0,
+		"boss_over_threshold_count": 0,
+		"route_risk_summary": _empty_route_risk_summary(),
+		"run_health_flags": {}
+	}
+
+func _route_snapshot(app: Node) -> Dictionary:
+	return {
+		"hp": int(app.run_state.hp),
+		"gold": int(app.run_state.gold),
+		"deck_count": app.run_state.deck_ids.size(),
+		"curse_count": _count_curses(app.run_state.deck_ids),
+		"relic_count": app.run_state.relic_ids.size()
+	}
+
+func _count_curses(deck_ids: Array) -> int:
+	var count := 0
+	for card_id_variant in deck_ids:
+		if str(card_id_variant).begins_with("curse-"):
+			count += 1
+	return count
+
+func _record_route_risk_delta(log: Dictionary, before: Dictionary, after: Dictionary, count_event: bool, starts_battle: bool) -> void:
+	var summary: Dictionary = log.get("route_risk_summary", {})
+	if summary.is_empty():
+		summary = _empty_route_risk_summary()
+	if count_event:
+		summary["event_count"] = int(summary.get("event_count", 0)) + 1
+	if starts_battle:
+		summary["event_battle_count"] = int(summary.get("event_battle_count", 0)) + 1
+	var hp_delta := int(after.get("hp", 0)) - int(before.get("hp", 0))
+	var gold_delta := int(after.get("gold", 0)) - int(before.get("gold", 0))
+	var curse_delta := int(after.get("curse_count", 0)) - int(before.get("curse_count", 0))
+	var relic_delta := int(after.get("relic_count", 0)) - int(before.get("relic_count", 0))
+	if hp_delta < 0:
+		summary["event_hp_lost"] = int(summary.get("event_hp_lost", 0)) + abs(hp_delta)
+	if gold_delta < 0:
+		summary["event_gold_spent"] = int(summary.get("event_gold_spent", 0)) + abs(gold_delta)
+	if curse_delta > 0:
+		summary["curse_added_count"] = int(summary.get("curse_added_count", 0)) + curse_delta
+	if relic_delta > 0:
+		summary["event_relics_gained"] = int(summary.get("event_relics_gained", 0)) + relic_delta
+	log["route_risk_summary"] = summary
+
+func _record_combat_summary(log: Dictionary, app: Node, enemy_id: String, floor: int, node_type: String, turns: int, start_hp: int, energy_start: Dictionary) -> void:
+	var energy_now: Dictionary = log.get("energy_summary", {})
+	var combat_turns: int = max(1, int(energy_now.get("turns_total", 0)) - int(energy_start.get("turns_total", 0)))
+	var combat_turn_end_energy := int(energy_now.get("total_turn_end_energy", 0)) - int(energy_start.get("total_turn_end_energy", 0))
+	var combat_cards_played := int(energy_now.get("cards_played", 0)) - int(energy_start.get("cards_played", 0))
+	var end_hp := int(app.combat.player_hp) if str(app.combat.outcome) == "victory" else 0
+	var combat_summary := {
+		"enemy_id": enemy_id,
+		"floor": floor,
+		"node_type": node_type,
+		"turns": turns,
+		"start_hp": start_hp,
+		"end_hp": end_hp,
+		"damage_taken": max(0, start_hp - end_hp),
+		"cards_played": combat_cards_played,
+		"average_unspent_energy": float(combat_turn_end_energy) / float(combat_turns),
+		"result": str(app.combat.outcome)
+	}
+	var combat_summaries: Array = log.get("combat_summaries", [])
+	combat_summaries.append(combat_summary)
+	log["combat_summaries"] = combat_summaries
+	if bool(app.combat.enemy.get("is_boss", false)):
+		var over_threshold := str(log.get("character_id", "")) == "azki" and turns >= 12
+		log["boss_pacing_summary"] = {
+			"boss_id": enemy_id,
+			"turns": turns,
+			"start_hp": start_hp,
+			"end_hp": end_hp,
+			"over_threshold": over_threshold
+		}
+		if over_threshold:
+			_append_run_health_flag(log, "azki_boss_pacing_watch")
+		var route_summary: Dictionary = log.get("route_risk_summary", {})
+		if start_hp < 18 and int(route_summary.get("event_hp_lost", 0)) >= 14:
+			_append_run_health_flag(log, "event_risk_compounding_watch")
+	if str(log.get("character_id", "")) == "subaru" and floor >= 7 and floor <= 11 and (str(app.combat.outcome) == "defeat" or end_hp <= 10):
+		_append_run_health_flag(log, "subaru_midrun_hp_pressure_watch")
+
+func _append_run_health_flag(log: Dictionary, flag: String) -> void:
+	var flags: Array = log.get("run_health_flags", [])
+	if not flags.has(flag):
+		flags.append(flag)
+	log["run_health_flags"] = flags
+
+func _merge_route_risk_summary(left: Dictionary, right: Dictionary) -> Dictionary:
+	var result := left.duplicate(true)
+	if result.is_empty():
+		result = _empty_route_risk_summary()
+	for key in ["event_count", "event_battle_count", "curse_added_count", "event_hp_lost", "event_gold_spent", "event_relics_gained"]:
+		result[key] = int(result.get(key, 0)) + int(right.get(key, 0))
+	return result
+
+func _merge_character_pacing_summary(left: Dictionary, log: Dictionary) -> Dictionary:
+	var result := left.duplicate(true)
+	if result.is_empty():
+		result = _empty_character_pacing_summary()
+	var boss_summary: Dictionary = log.get("boss_pacing_summary", {})
+	if int(boss_summary.get("turns", 0)) > 0:
+		result["boss_combat_count"] = int(result.get("boss_combat_count", 0)) + 1
+		result["total_boss_turns"] = int(result.get("total_boss_turns", 0)) + int(boss_summary.get("turns", 0))
+		result["average_boss_turns"] = float(result["total_boss_turns"]) / float(max(1, int(result["boss_combat_count"])))
+		result["max_boss_turns"] = max(int(result.get("max_boss_turns", 0)), int(boss_summary.get("turns", 0)))
+		if bool(boss_summary.get("over_threshold", false)):
+			result["boss_over_threshold_count"] = int(result.get("boss_over_threshold_count", 0)) + 1
+	result["route_risk_summary"] = _merge_route_risk_summary(result.get("route_risk_summary", {}), log.get("route_risk_summary", {}))
+	var flag_counts: Dictionary = result.get("run_health_flags", {})
+	for flag_variant in log.get("run_health_flags", []):
+		_increment_count(flag_counts, str(flag_variant))
+	result["run_health_flags"] = flag_counts
+	return result
+
 func _build_summary() -> Dictionary:
 	var summary := {}
 	for log in run_logs:
@@ -472,6 +630,7 @@ func _build_summary() -> Dictionary:
 				"defeat_enemy_ids": {},
 				"defeat_floors": {},
 				"energy_summary": _empty_energy_summary(),
+				"pacing_summary": _empty_character_pacing_summary(),
 				"failure_cases": []
 			}
 		var stats: Dictionary = summary[character_id]
@@ -480,6 +639,7 @@ func _build_summary() -> Dictionary:
 		stats[result] = int(stats.get(result, 0)) + 1
 		stats["average_final_floor"] = float(stats["average_final_floor"]) + float(int(log.get("final_floor", 0)))
 		stats["energy_summary"] = _merge_energy_summary(stats.get("energy_summary", {}), log.get("energy_summary", {}))
+		stats["pacing_summary"] = _merge_character_pacing_summary(stats.get("pacing_summary", {}), log)
 		_increment_count(stats["boss_ids"], str(log.get("boss_id", "")))
 		if result == "boss_reward_reached":
 			var hp := int(log.get("hp", 0))
@@ -585,6 +745,7 @@ func _validate_probe_summary(summary: Dictionary) -> void:
 			"combat_count": int(energy_summary.get("combat_count", 0)),
 			"energy_summary": energy_summary
 		})
+		_validate_character_pacing_summary(str(character_id), stats.get("pacing_summary", {}))
 
 func _validate_failure_cases(cases: Array[Dictionary]) -> void:
 	_expect_true(not cases.is_empty(), "multiseed 應輸出失敗 seed triage cases，方便後續分群分析")
@@ -661,6 +822,7 @@ func _validate_probe_log(log: Dictionary) -> void:
 	if not str(log.get("qa_report_text", "")).contains("QA 回報摘要"):
 		_fail("%s seed %d probe 需輸出可複製 QA report text" % [str(log.get("character_id", "")), int(log.get("seed", 0))])
 	_validate_energy_summary(log)
+	_validate_pacing_and_risk_schema(log)
 
 func _validate_energy_summary(log: Dictionary) -> void:
 	var character_id := str(log.get("character_id", ""))
@@ -672,6 +834,32 @@ func _validate_energy_summary(log: Dictionary) -> void:
 	_expect_true(int(summary.get("combat_count", 0)) == int(log.get("combat_count", 0)), "%s seed %d energy_summary combat_count 需等於 combat_count" % [character_id, seed_value])
 	_expect_true(int(summary.get("turns_total", 0)) >= int(summary.get("combat_count", 0)), "%s seed %d energy_summary turns_total 需至少涵蓋 combat_count" % [character_id, seed_value])
 	_expect_true(summary.has("economy_flags"), "%s seed %d energy_summary 需包含 economy_flags" % [character_id, seed_value])
+
+func _validate_pacing_and_risk_schema(log: Dictionary) -> void:
+	var character_id := str(log.get("character_id", ""))
+	var seed_value := int(log.get("seed", 0))
+	_expect_true(log.has("combat_summaries"), "%s seed %d log 需包含 combat_summaries" % [character_id, seed_value])
+	_expect_true(log.has("boss_pacing_summary"), "%s seed %d log 需包含 boss_pacing_summary" % [character_id, seed_value])
+	_expect_true(log.has("route_risk_summary"), "%s seed %d log 需包含 route_risk_summary" % [character_id, seed_value])
+	_expect_true(log.has("run_health_flags"), "%s seed %d log 需包含 run_health_flags" % [character_id, seed_value])
+	var combat_summaries: Array = log.get("combat_summaries", [])
+	_expect_true(combat_summaries.size() == int(log.get("combat_count", 0)), "%s seed %d combat_summaries 數量需等於 combat_count" % [character_id, seed_value])
+	if not combat_summaries.is_empty():
+		var first_combat: Dictionary = combat_summaries[0]
+		for key in ["enemy_id", "floor", "node_type", "turns", "start_hp", "end_hp", "damage_taken", "cards_played", "average_unspent_energy", "result"]:
+			_expect_true(first_combat.has(key), "%s seed %d combat summary 需包含 %s" % [character_id, seed_value, str(key)])
+	var boss_summary: Dictionary = log.get("boss_pacing_summary", {})
+	for key in ["boss_id", "turns", "start_hp", "end_hp", "over_threshold"]:
+		_expect_true(boss_summary.has(key), "%s seed %d boss_pacing_summary 需包含 %s" % [character_id, seed_value, str(key)])
+	var route_summary: Dictionary = log.get("route_risk_summary", {})
+	for key in ["event_count", "event_battle_count", "curse_added_count", "event_hp_lost", "event_gold_spent", "event_relics_gained"]:
+		_expect_true(route_summary.has(key), "%s seed %d route_risk_summary 需包含 %s" % [character_id, seed_value, str(key)])
+
+func _validate_character_pacing_summary(character_id: String, pacing_summary: Dictionary) -> void:
+	_expect_true(pacing_summary.has("average_boss_turns"), "%s summary 需包含 average_boss_turns" % character_id)
+	_expect_true(pacing_summary.has("max_boss_turns"), "%s summary 需包含 max_boss_turns" % character_id)
+	_expect_true(pacing_summary.has("route_risk_summary"), "%s summary 需包含 route_risk_summary" % character_id)
+	_expect_true(pacing_summary.has("run_health_flags"), "%s summary 需包含 run_health_flags" % character_id)
 
 func _update_log_from_app(log: Dictionary, app: Node) -> void:
 	var current_node: Dictionary = app.run_state.get_current_node(app.database)
@@ -688,6 +876,9 @@ func _update_log_from_app(log: Dictionary, app: Node) -> void:
 func _update_qa_report_from_app(log: Dictionary, app: Node) -> void:
 	var cleared := str(app.current_screen) == "boss_reward" or (str(app.current_screen) == "run_end" and bool(app.last_run_end_cleared))
 	var snapshot: Dictionary = app._manual_qa_report_snapshot(cleared)
+	snapshot["boss_pacing_summary"] = log.get("boss_pacing_summary", _empty_boss_pacing_summary())
+	snapshot["route_risk_summary"] = log.get("route_risk_summary", _empty_route_risk_summary())
+	snapshot["run_health_flags"] = log.get("run_health_flags", [])
 	log["qa_report"] = snapshot
 	log["qa_report_text"] = app._manual_qa_report_text_from_snapshot(snapshot)
 
