@@ -36,7 +36,10 @@ func _run() -> void:
 		print("multiseed_balance_probe_log: %s" % JSON.stringify(log_entry))
 	var summary := _build_summary()
 	print("multiseed_balance_probe_summary: %s" % JSON.stringify(summary))
+	var failure_cases := _build_failure_cases()
+	print("multiseed_balance_probe_failure_cases: %s" % JSON.stringify(failure_cases))
 	_validate_probe_summary(summary)
+	_validate_failure_cases(failure_cases)
 
 	if failures.is_empty():
 		print("multiseed_balance_probe_tests: ok")
@@ -369,7 +372,8 @@ func _build_summary() -> Dictionary:
 				"average_final_floor": 0.0,
 				"boss_ids": {},
 				"defeat_enemy_ids": {},
-				"defeat_floors": {}
+				"defeat_floors": {},
+				"failure_cases": []
 			}
 		var stats: Dictionary = summary[character_id]
 		var result := str(log.get("result", ""))
@@ -385,6 +389,9 @@ func _build_summary() -> Dictionary:
 		elif result == "defeated":
 			_increment_count(stats["defeat_enemy_ids"], str(log.get("defeat_enemy_id", "")))
 			_increment_count(stats["defeat_floors"], str(log.get("defeat_floor", 0)))
+			var cases: Array = stats.get("failure_cases", [])
+			cases.append(_failure_case_from_log(log))
+			stats["failure_cases"] = cases
 	for character_id in summary.keys():
 		var stats: Dictionary = summary[character_id]
 		var total: int = max(1, int(stats["total"]))
@@ -396,6 +403,27 @@ func _build_summary() -> Dictionary:
 		if wins == 0:
 			stats["min_win_hp"] = 0
 	return summary
+
+func _build_failure_cases() -> Array[Dictionary]:
+	var cases: Array[Dictionary] = []
+	for log in run_logs:
+		if str(log.get("result", "")) == "defeated":
+			cases.append(_failure_case_from_log(log))
+	return cases
+
+func _failure_case_from_log(log: Dictionary) -> Dictionary:
+	var report: Dictionary = log.get("qa_report", {})
+	return {
+		"character_id": str(log.get("character_id", "")),
+		"seed": int(log.get("seed", 0)),
+		"boss_id": str(log.get("boss_id", "")),
+		"defeat_floor": int(log.get("defeat_floor", 0)),
+		"defeat_enemy_id": str(log.get("defeat_enemy_id", "")),
+		"defeat_hp": int(report.get("defeat_hp", 0)),
+		"deck_summary": str(report.get("deck_summary", "")),
+		"relic_summary": str(report.get("relic_summary", "")),
+		"qa_report_text": str(log.get("qa_report_text", ""))
+	}
 
 func _validate_probe_summary(summary: Dictionary) -> void:
 	var minimum_boss_reward_reached := {
@@ -409,6 +437,19 @@ func _validate_probe_summary(summary: Dictionary) -> void:
 		var required := int(minimum_boss_reward_reached[character_id])
 		_expect_true(reached >= required, "%s multiseed 至少應有 %d/%d 抵達 boss_reward，目前 %d/%d" % [str(character_id), required, SEEDS_PER_CHARACTER, reached, SEEDS_PER_CHARACTER])
 		_expect_true(float(stats.get("average_final_floor", 0.0)) >= 12.0, "%s multiseed 平均結束樓層應至少 12，目前 %.2f" % [str(character_id), float(stats.get("average_final_floor", 0.0))])
+		var failure_cases: Array = stats.get("failure_cases", [])
+		_expect_true(failure_cases.size() == int(stats.get("defeated", 0)), "%s summary failure_cases 數量需等於 defeated 數量" % str(character_id))
+
+func _validate_failure_cases(cases: Array[Dictionary]) -> void:
+	_expect_true(not cases.is_empty(), "multiseed 應輸出失敗 seed triage cases，方便後續分群分析")
+	for failure_case in cases:
+		_expect_true(str(failure_case.get("character_id", "")) != "", "failure case 需包含 character_id")
+		_expect_true(int(failure_case.get("seed", 0)) > 0, "failure case 需包含 seed")
+		_expect_true(int(failure_case.get("defeat_floor", 0)) > 0, "failure case 需包含死亡樓層")
+		_expect_true(str(failure_case.get("defeat_enemy_id", "")) != "", "failure case 需包含死亡敵人 id")
+		_expect_true(str(failure_case.get("deck_summary", "")) != "", "failure case 需包含中文 deck 摘要")
+		_expect_true(str(failure_case.get("relic_summary", "")) != "", "failure case 需包含中文 relic 摘要")
+		_expect_true(str(failure_case.get("qa_report_text", "")).contains("QA 回報摘要"), "failure case 需保留可複製 QA report text")
 
 func _increment_count(counts: Dictionary, key: String) -> void:
 	if key == "":
