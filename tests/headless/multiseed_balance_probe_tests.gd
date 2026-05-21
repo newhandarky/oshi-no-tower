@@ -38,8 +38,11 @@ func _run() -> void:
 	print("multiseed_balance_probe_summary: %s" % JSON.stringify(summary))
 	var failure_cases := _build_failure_cases()
 	print("multiseed_balance_probe_failure_cases: %s" % JSON.stringify(failure_cases))
+	var failure_analysis := _build_failure_analysis(failure_cases)
+	print("multiseed_balance_probe_failure_analysis: %s" % JSON.stringify(failure_analysis))
 	_validate_probe_summary(summary)
 	_validate_failure_cases(failure_cases)
+	_validate_failure_analysis(failure_analysis)
 
 	if failures.is_empty():
 		print("multiseed_balance_probe_tests: ok")
@@ -411,6 +414,45 @@ func _build_failure_cases() -> Array[Dictionary]:
 			cases.append(_failure_case_from_log(log))
 	return cases
 
+func _build_failure_analysis(cases: Array[Dictionary]) -> Dictionary:
+	var analysis := {}
+	for character_id in ["subaru", "botan", "azki"]:
+		analysis[character_id] = _empty_failure_analysis_stats()
+	for failure_case in cases:
+		var character_id := str(failure_case.get("character_id", ""))
+		if not analysis.has(character_id):
+			analysis[character_id] = _empty_failure_analysis_stats()
+		var stats: Dictionary = analysis[character_id]
+		stats["total_failures"] = int(stats["total_failures"]) + 1
+		var defeat_floor := int(failure_case.get("defeat_floor", 0))
+		_increment_count(stats["defeat_floors"], str(defeat_floor))
+		_increment_count(stats["defeat_enemy_ids"], str(failure_case.get("defeat_enemy_id", "")))
+		if defeat_floor >= 16:
+			stats["boss_failures"] = int(stats["boss_failures"]) + 1
+		elif defeat_floor > 0:
+			stats["midrun_failures"] = int(stats["midrun_failures"]) + 1
+		if _failure_case_has_curse(failure_case):
+			stats["curse_seen"] = int(stats["curse_seen"]) + 1
+	for character_id in analysis.keys():
+		var stats: Dictionary = analysis[character_id]
+		stats["repeated_defeat_floors"] = _counts_at_least(stats["defeat_floors"], 2)
+		stats["repeated_defeat_enemy_ids"] = _counts_at_least(stats["defeat_enemy_ids"], 2)
+		stats["likely_issues"] = _likely_issues_for_failure_stats(str(character_id), stats)
+	return analysis
+
+func _empty_failure_analysis_stats() -> Dictionary:
+	return {
+		"total_failures": 0,
+		"defeat_floors": {},
+		"defeat_enemy_ids": {},
+		"boss_failures": 0,
+		"midrun_failures": 0,
+		"curse_seen": 0,
+		"repeated_defeat_floors": {},
+		"repeated_defeat_enemy_ids": {},
+		"likely_issues": []
+	}
+
 func _failure_case_from_log(log: Dictionary) -> Dictionary:
 	var report: Dictionary = log.get("qa_report", {})
 	return {
@@ -451,10 +493,51 @@ func _validate_failure_cases(cases: Array[Dictionary]) -> void:
 		_expect_true(str(failure_case.get("relic_summary", "")) != "", "failure case 需包含中文 relic 摘要")
 		_expect_true(str(failure_case.get("qa_report_text", "")).contains("QA 回報摘要"), "failure case 需保留可複製 QA report text")
 
+func _validate_failure_analysis(analysis: Dictionary) -> void:
+	_expect_true(not analysis.is_empty(), "multiseed 需輸出 failure analysis，方便後續判斷是否要調平衡")
+	for character_id in ["subaru", "botan", "azki"]:
+		var stats: Dictionary = analysis.get(character_id, {})
+		_expect_true(int(stats.get("total_failures", 0)) >= 0, "%s failure analysis 需包含 total_failures" % character_id)
+		_expect_true(stats.has("repeated_defeat_floors"), "%s failure analysis 需包含 repeated_defeat_floors" % character_id)
+		_expect_true(stats.has("repeated_defeat_enemy_ids"), "%s failure analysis 需包含 repeated_defeat_enemy_ids" % character_id)
+		_expect_true(stats.has("likely_issues"), "%s failure analysis 需包含 likely_issues" % character_id)
+
 func _increment_count(counts: Dictionary, key: String) -> void:
 	if key == "":
 		key = "__empty__"
 	counts[key] = int(counts.get(key, 0)) + 1
+
+func _counts_at_least(counts: Dictionary, threshold: int) -> Dictionary:
+	var result := {}
+	for key in counts.keys():
+		var count := int(counts[key])
+		if count >= threshold:
+			result[str(key)] = count
+	return result
+
+func _failure_case_has_curse(failure_case: Dictionary) -> bool:
+	var deck_summary := str(failure_case.get("deck_summary", ""))
+	return deck_summary.contains("Dead Air") or deck_summary.contains("Bad Connection") or deck_summary.contains("Comment Fire")
+
+func _likely_issues_for_failure_stats(character_id: String, stats: Dictionary) -> Array[String]:
+	var issues: Array[String] = []
+	if int(stats.get("boss_failures", 0)) >= 2:
+		issues.append("late_boss_pressure")
+	if int(stats.get("midrun_failures", 0)) >= 2:
+		issues.append("midrun_stability")
+	if not (stats.get("repeated_defeat_enemy_ids", {}) as Dictionary).is_empty():
+		issues.append("repeated_enemy_pattern")
+	if int(stats.get("curse_seen", 0)) >= 2:
+		issues.append("curse_risk_compounding")
+	if character_id == "azki" and int(stats.get("boss_failures", 0)) >= 2:
+		issues.append("azki_late_closing_or_guard_pressure")
+	if character_id == "subaru" and int(stats.get("midrun_failures", 0)) >= 2:
+		issues.append("subaru_mid_elite_defense_pressure")
+	if character_id == "botan" and int(stats.get("boss_failures", 0)) >= 1:
+		issues.append("botan_boss_pressure_watch_only")
+	if issues.is_empty() and int(stats.get("total_failures", 0)) > 0:
+		issues.append("single_seed_variance")
+	return issues
 
 func _validate_probe_log(log: Dictionary) -> void:
 	var result := str(log.get("result", ""))
