@@ -12,9 +12,9 @@
 
 | 角色 | 目前結果 | 重點 |
 | --- | --- | --- |
-| Subaru | Subaru 5/10 | 007 補 `subaru-desk-reaction` 與 `subaru-tsukkomi`，改善前中段菁英穩定度。 |
+| Subaru | Subaru 6/10 | 015 補 `subaru-rhythm-guard`、`subaru-crowd-cover`、`subaru-new-oshi-call` 的中段防守，不新增能量。 |
 | Botan | Botan 7/10 | 006 後維持較高穩定度；009 不主動 buff Botan。 |
-| AZKi | AZKi 5/10 | 008 補 `azki-phantom-route` / `azki-necro-recall` 直接格擋，改善後段 Boss 與部分 floor 11 壓力。 |
+| AZKi | AZKi 7/10 | 015 補 `azki-coordinate-barrage`、`azki-laplus-release`、`azki-laplus-overflow` 的 boss 收束效率。 |
 
 009 起，後續若再動平衡，應至少維持 `Subaru >= 5/10`、`Botan >= 5/10`、`AZKi >= 5/10`。若某角色跌破此基準，需先解釋是刻意換取體感、敵人壓力或 reward 密度調整，而不是無意退化。
 
@@ -33,9 +33,10 @@ manual full-run 仍是 Desktop Build Readiness 與 Creative Director final accep
 - AZKi 額外項目：`laplus_dash` / `laplus_crash` 實機打出時，AZKi body、Laplus summon、FX 與 Laplus HP label 是否互相遮擋；Laplus 在敵方回合倒下後，下一個玩家回合應以 1 HP 復活。
 - 013 起，`multiseed_balance_probe_tests.gd` 會額外輸出 `multiseed_balance_probe_failure_cases`，集中列出每個死亡 seed 的角色、seed、Boss、死亡樓層、死亡敵人、中文 deck/relic 摘要與可複製 QA report text。這是 headless 端的分群入口，可用來對照玩家截圖，不需要再從 30 筆逐局 log 裡人工撈失敗案例。
 - 014 起，`multiseed_balance_probe_tests.gd` 也會輸出 `multiseed_balance_probe_failure_analysis`，把失敗案例聚合成角色別 `repeated_defeat_floors`、`repeated_defeat_enemy_ids`、`boss_failures`、`midrun_failures`、`curse_seen` 與 `likely_issues`。這是判讀輔助，不是自動調平衡指令；任何數值調整仍需看玩家體感或明確 repeated pattern。
+- 015 起，multiseed guard 會額外保護兩個 repeated pattern：AZKi 死於 `ssrb-giant-camouflage` 不可超過 2 次，Subaru 死於 `ssrb-debuff-check` 不可超過 1 次。manual full-run 時優先確認 AZKi boss 節奏是否仍拖太長，以及 Subaru 中段防守是否變穩但沒有能量過多感。
 
 ## 下一步建議
 
-1. 先完成 014 並保留 `multiseed_balance_probe_failure_analysis`，讓後續不用人工從 JSON 裡歸納重複死亡模式。
-2. 下一輪若轉 manual QA，直接截取結算畫面的 `QA 回報摘要`，再補體感 / UI 問題；我可用截圖與 failure cases / failure analysis 對照。
-3. 下一輪若繼續自動化，可把 `likely_issues` 轉成更明確的候選 task，但不要在沒有玩家新回報時大幅調整敵人或 Botan。
+1. 下一輪若能 manual QA，直接截取結算畫面的 `QA 回報摘要`，再補體感 / UI 問題；我可用截圖與 failure cases / failure analysis 對照。
+2. 優先手測 AZKi boss 戰回合感、Subaru 中段菁英壓力、以及 Subaru 是否仍有能量過多感。
+3. 若繼續自動化，下一步適合補 energy telemetry 或 boss pacing probe；不要在沒有玩家新回報時大幅調整敵人或 Botan。
