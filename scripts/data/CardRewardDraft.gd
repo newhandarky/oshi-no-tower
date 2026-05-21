@@ -301,10 +301,13 @@ func _azki_midrun_payoff_bonus(card: Dictionary, deck_signal: Dictionary, floor:
 		return 0.0
 	var card_id := str(card.get("id", ""))
 	if floor >= 10 and _azki_existing_laplus_payoff_count(deck_signal) < 1:
-		if card_id in ["azki-necrobinder-finale", "azki-laplus-combo", "azki-laplus-release"]:
-			return 128.0
+		if card_id in ["azki-necrobinder-finale", "azki-laplus-combo", "azki-laplus-release", "azki-laplus-overflow"]:
+			return 144.0
 		if card_id in ["azki-laplus-guard-order", "azki-laplus-contract", "azki-safe-route"]:
 			return -42.0
+	if floor >= 10 and _azki_existing_laplus_payoff_count(deck_signal) < 2:
+		if card_id in ["azki-necrobinder-finale", "azki-laplus-combo", "azki-laplus-release", "azki-laplus-overflow"]:
+			return 92.0
 	if _azki_existing_laplus_payoff_count(deck_signal) >= 2 and card_id in ["azki-laplus-cover", "azki-laplus-reposition", "azki-safe-route", "azki-coordinate-shield", "azki-phantom-route", "azki-necro-recall", "azki-laplus-guard-order", "azki-laplus-contract", "azki-dark-tether"]:
 		return 138.0
 	if card_id in ["azki-laplus-overflow", "azki-necrobinder-finale", "azki-laplus-crash", "azki-laplus-combo", "azki-laplus-release"]:

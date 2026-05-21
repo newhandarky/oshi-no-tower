@@ -79,6 +79,9 @@ func _run_auto_case(character_id: String, run_seed: int, required_result: String
 		"boss_pacing_summary": _empty_boss_pacing_summary(),
 		"route_risk_summary": _empty_route_risk_summary(),
 		"route_risk_events": [],
+		"reward_choice_summaries": [],
+		"deck_archetype_timeline": [],
+		"key_pickup_floors": {},
 		"run_health_flags": [],
 		"result": "failed"
 	}
@@ -128,7 +131,7 @@ func _advance_current_screen(app: Node, log: Dictionary, step_seed: int) -> bool
 		"combat":
 			return await _resolve_combat_screen(app, log)
 		"reward":
-			return await _resolve_reward_screen(app)
+			return await _resolve_reward_screen(app, log)
 		"chest_reward":
 			app._continue_after_chest_reward()
 			await process_frame
@@ -335,11 +338,19 @@ func _auto_play_effect_score(effect: Dictionary, enemy_attacking: bool) -> float
 			return float(int(effect.get("base", 0)) + int(effect.get("per_hp", 1)) * 8) * 2.4
 	return 0.0
 
-func _resolve_reward_screen(app: Node) -> bool:
+func _resolve_reward_screen(app: Node, log: Dictionary) -> bool:
 	if app.reward_card_ids.is_empty():
 		app._skip_reward()
 	else:
-		app._take_reward_card(str(app.reward_card_ids[0]))
+		var current_node: Dictionary = app.run_state.get_current_node(app.database)
+		var floor := int(current_node.get("floor", 0))
+		var choices: Array[String] = []
+		for card_id_variant in app.reward_card_ids:
+			choices.append(str(card_id_variant))
+		var selected_card_id := str(app.reward_card_ids[0])
+		var before := _deck_archetype_snapshot(app)
+		app._take_reward_card(selected_card_id)
+		_record_reward_choice(log, app, floor, choices, selected_card_id, before)
 	await process_frame
 	return true
 
@@ -632,6 +643,82 @@ func _route_risk_tags(hp_delta: int, gold_delta: int, curse_delta: int, relic_de
 		tags.append("low_risk")
 	return tags
 
+func _record_reward_choice(log: Dictionary, app: Node, floor: int, choices: Array[String], selected_card_id: String, before_snapshot: Dictionary) -> void:
+	var selected_card: Dictionary = app.database.get_card(selected_card_id)
+	var after_snapshot := _deck_archetype_snapshot(app)
+	var summaries: Array = log.get("reward_choice_summaries", [])
+	summaries.append({
+		"floor": floor,
+		"choices": choices,
+		"selected_card_id": selected_card_id,
+		"selected_roles": selected_card.get("role_tags", []),
+		"selected_archetypes": selected_card.get("archetype_tags", []),
+		"before": before_snapshot,
+		"after": after_snapshot
+	})
+	log["reward_choice_summaries"] = summaries
+	var timeline: Array = log.get("deck_archetype_timeline", [])
+	timeline.append({
+		"floor": floor,
+		"selected_card_id": selected_card_id,
+		"snapshot": after_snapshot
+	})
+	log["deck_archetype_timeline"] = timeline
+	_record_key_pickup_floor(log, str(app.run_state.character_id), selected_card, floor)
+
+func _deck_archetype_snapshot(app: Node) -> Dictionary:
+	var snapshot := {}
+	for card_id_variant in app.run_state.deck_ids:
+		var card: Dictionary = app.database.get_card(str(card_id_variant))
+		for tag_variant in card.get("archetype_tags", []):
+			var tag := str(tag_variant)
+			snapshot[tag] = int(snapshot.get(tag, 0)) + 1
+		for role_variant in card.get("role_tags", []):
+			var role_key := "role:%s" % str(role_variant)
+			snapshot[role_key] = int(snapshot.get(role_key, 0)) + 1
+	return snapshot
+
+func _record_key_pickup_floor(log: Dictionary, character_id: String, card: Dictionary, floor: int) -> void:
+	var key_map: Dictionary = log.get("key_pickup_floors", {})
+	for key in _key_pickup_tags(character_id, card):
+		if not key_map.has(key):
+			key_map[key] = floor
+	log["key_pickup_floors"] = key_map
+
+func _key_pickup_tags(character_id: String, card: Dictionary) -> Array[String]:
+	var result: Array[String] = []
+	var archetypes: Array = card.get("archetype_tags", [])
+	var roles: Array = card.get("role_tags", [])
+	match character_id:
+		"subaru":
+			if archetypes.has("cheap_chain"):
+				result.append("cheap_chain")
+			if archetypes.has("tempo_block"):
+				result.append("tempo_block")
+			if roles.has("defense"):
+				result.append("mid_defense")
+			if roles.has("payoff"):
+				result.append("payoff")
+		"botan":
+			if archetypes.has("two_cost_burst"):
+				result.append("two_cost_burst")
+			if archetypes.has("setup") or roles.has("setup") or roles.has("bridge"):
+				result.append("setup_control")
+			if roles.has("defense"):
+				result.append("defense")
+			if roles.has("payoff"):
+				result.append("payoff")
+		"azki":
+			if archetypes.has("marker_loop"):
+				result.append("marker")
+			if archetypes.has("laplus_guard") and (roles.has("bridge") or roles.has("defense")):
+				result.append("laplus_bridge")
+			if archetypes.has("laplus_guard") and roles.has("payoff"):
+				result.append("laplus_payoff")
+			if roles.has("scaling"):
+				result.append("scaling")
+	return result
+
 func _record_combat_summary(log: Dictionary, app: Node, enemy_id: String, floor: int, node_type: String, turns: int, start_hp: int, energy_start: Dictionary) -> void:
 	var energy_now: Dictionary = log.get("energy_summary", {})
 	var combat_turns: int = max(1, int(energy_now.get("turns_total", 0)) - int(energy_start.get("turns_total", 0)))
@@ -712,6 +799,9 @@ func _validate_pacing_and_risk_schema(log: Dictionary) -> void:
 	_expect_true(log.has("boss_pacing_summary"), "%s auto-run log 需包含 boss_pacing_summary" % character_id)
 	_expect_true(log.has("route_risk_summary"), "%s auto-run log 需包含 route_risk_summary" % character_id)
 	_expect_true(log.has("route_risk_events"), "%s auto-run log 需包含 route_risk_events" % character_id)
+	_expect_true(log.has("reward_choice_summaries"), "%s auto-run log 需包含 reward_choice_summaries" % character_id)
+	_expect_true(log.has("deck_archetype_timeline"), "%s auto-run log 需包含 deck_archetype_timeline" % character_id)
+	_expect_true(log.has("key_pickup_floors"), "%s auto-run log 需包含 key_pickup_floors" % character_id)
 	_expect_true(log.has("run_health_flags"), "%s auto-run log 需包含 run_health_flags" % character_id)
 	var combat_summaries: Array = log.get("combat_summaries", [])
 	_expect_eq(combat_summaries.size(), int(log.get("combat_count", 0)), "%s combat_summaries 數量應等於 combat_count" % character_id)
@@ -731,6 +821,11 @@ func _validate_pacing_and_risk_schema(log: Dictionary) -> void:
 		var first_event: Dictionary = route_events[0]
 		for key in ["event_id", "floor", "option_label", "hp_delta", "gold_delta", "curse_delta", "relic_delta", "starts_battle", "risk_tags"]:
 			_expect_true(first_event.has(key), "%s route_risk_events 需包含 %s" % [character_id, str(key)])
+	var reward_summaries: Array = log.get("reward_choice_summaries", [])
+	if not reward_summaries.is_empty():
+		var first_reward: Dictionary = reward_summaries[0]
+		for key in ["floor", "choices", "selected_card_id", "selected_roles", "selected_archetypes", "before", "after"]:
+			_expect_true(first_reward.has(key), "%s reward_choice_summaries 需包含 %s" % [character_id, str(key)])
 
 func _update_log_from_app(log: Dictionary, app: Node) -> void:
 	var current_node: Dictionary = app.run_state.get_current_node(app.database)
@@ -750,6 +845,9 @@ func _update_qa_report_from_app(log: Dictionary, app: Node) -> void:
 	snapshot["boss_pacing_summary"] = log.get("boss_pacing_summary", _empty_boss_pacing_summary())
 	snapshot["route_risk_summary"] = log.get("route_risk_summary", _empty_route_risk_summary())
 	snapshot["route_risk_events"] = log.get("route_risk_events", [])
+	snapshot["reward_choice_summaries"] = log.get("reward_choice_summaries", [])
+	snapshot["deck_archetype_timeline"] = log.get("deck_archetype_timeline", [])
+	snapshot["key_pickup_floors"] = log.get("key_pickup_floors", {})
 	snapshot["run_health_flags"] = log.get("run_health_flags", [])
 	log["qa_report"] = snapshot
 	log["qa_report_text"] = app._manual_qa_report_text_from_snapshot(snapshot)
