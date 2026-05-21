@@ -40,6 +40,10 @@ func _test_balance_playtest_prep_doc_exists() -> void:
 	_expect_true(content.contains("ssrb-giant-camouflage"), "prep 文件需記錄 015 後 AZKi boss repeated pattern guard")
 	_expect_true(content.contains("ssrb-debuff-check"), "prep 文件需記錄 015 後 Subaru 中段 repeated pattern guard")
 	_expect_true(content.contains("能量過多感"), "prep 文件需記錄 015 後 Subaru 能量體感手測重點")
+	_expect_true(content.contains("energy_summary"), "prep 文件需記錄 016 後 energy_summary telemetry")
+	_expect_true(content.contains("average_unspent_energy"), "prep 文件需記錄 016 後平均未花能量欄位")
+	_expect_true(content.contains("high_unspent_energy_turns"), "prep 文件需記錄 016 後高剩餘能量回合欄位")
+	_expect_true(content.contains("subaru_energy_overflow_watch"), "prep 文件需記錄 016 後 Subaru energy overflow watch flag")
 	_expect_true(content.contains("不要在沒有玩家新回報時大幅調整敵人或 Botan"), "prep 文件需保護 013 後下一步不要無根據 buff / nerf")
 
 func _expect_true(actual: bool, message: String) -> void:

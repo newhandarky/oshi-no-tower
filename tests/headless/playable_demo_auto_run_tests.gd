@@ -74,6 +74,7 @@ func _run_auto_case(character_id: String, run_seed: int, required_result: String
 		"qa_report": {},
 		"qa_report_text": "",
 		"azki_actions_seen": [],
+		"energy_summary": _empty_energy_summary(),
 		"result": "failed"
 	}
 
@@ -110,6 +111,7 @@ func _run_auto_case(character_id: String, run_seed: int, required_result: String
 		log["result"] = "stopped_by_guardrail"
 
 	_update_log_from_app(log, app)
+	_apply_economy_flags(log)
 	run_logs.append(log.duplicate(true))
 	_validate_run_log(log, required_result)
 	app.queue_free()
@@ -180,13 +182,17 @@ func _resolve_combat_screen(app: Node, log: Dictionary) -> bool:
 	log["combat_start_hp"] = int(app.run_state.hp)
 	log["combat_start_deck_ids"] = app.run_state.deck_ids.duplicate()
 	log["combat_start_relic_ids"] = app.run_state.relic_ids.duplicate()
+	_start_energy_combat(log)
 
 	var turns := 0
 	while turns < MAX_COMBAT_TURNS and str(app.combat.outcome) == "ongoing":
 		turns += 1
+		var turn_energy := _new_energy_turn(app)
 		var played_this_turn := true
 		while played_this_turn and str(app.combat.outcome) == "ongoing":
-			played_this_turn = _play_first_affordable_non_curse_card(app, log)
+			played_this_turn = _play_first_affordable_non_curse_card(app, log, turn_energy)
+		turn_energy["turn_end_energy"] = int(app.combat.player_energy)
+		_record_energy_turn(log, turn_energy)
 		if str(app.combat.outcome) != "ongoing":
 			break
 		app.combat_engine.end_player_turn(app.combat)
@@ -224,7 +230,7 @@ func _resolve_chapter_start_event_screen(app: Node) -> bool:
 	await process_frame
 	return resolved
 
-func _play_first_affordable_non_curse_card(app: Node, log: Dictionary) -> bool:
+func _play_first_affordable_non_curse_card(app: Node, log: Dictionary, turn_energy: Dictionary) -> bool:
 	var best_index := -1
 	var best_score := -99999.0
 	for hand_index in range(app.combat.hand.size()):
@@ -241,7 +247,15 @@ func _play_first_affordable_non_curse_card(app: Node, log: Dictionary) -> bool:
 		return false
 	var selected_card: Dictionary = app.combat.hand[best_index]
 	var animation := str(selected_card.get("animation", "idle"))
+	var cost := int(selected_card.get("cost", 0))
+	var energy_before := int(app.combat.player_energy)
 	var played: bool = app.combat_engine.try_play_card(app.combat, best_index)
+	if played:
+		var energy_after := int(app.combat.player_energy)
+		var expected_after_cost := energy_before - cost
+		turn_energy["energy_spent"] = int(turn_energy.get("energy_spent", 0)) + cost
+		turn_energy["energy_gained"] = int(turn_energy.get("energy_gained", 0)) + max(0, energy_after - expected_after_cost)
+		turn_energy["cards_played"] = int(turn_energy.get("cards_played", 0)) + 1
 	if played and str(app.run_state.character_id) == "azki" and animation in ["laplus_dash", "laplus_crash"]:
 		var actions: Array = log.get("azki_actions_seen", [])
 		if not actions.has(animation):
@@ -452,6 +466,64 @@ func _test_boss_warning_proxy() -> void:
 	if state.turn_events.size() > 0:
 		_expect_eq(str(state.turn_events[0].get("id", "")), "boss-warning", "Boss warning event id 應存在於 turn_events")
 
+func _empty_energy_summary() -> Dictionary:
+	return {
+		"combat_count": 0,
+		"turns_total": 0,
+		"total_turn_end_energy": 0,
+		"average_unspent_energy": 0.0,
+		"max_turn_end_energy": 0,
+		"high_unspent_energy_turns": 0,
+		"energy_spent": 0,
+		"energy_gained": 0,
+		"cards_played": 0,
+		"economy_flags": []
+	}
+
+func _new_energy_turn(app: Node) -> Dictionary:
+	return {
+		"turn_start_energy": int(app.combat.player_energy),
+		"energy_spent": 0,
+		"energy_gained": 0,
+		"turn_end_energy": 0,
+		"cards_played": 0
+	}
+
+func _start_energy_combat(log: Dictionary) -> void:
+	var summary: Dictionary = log.get("energy_summary", {})
+	if summary.is_empty():
+		summary = _empty_energy_summary()
+	summary["combat_count"] = int(summary.get("combat_count", 0)) + 1
+	log["energy_summary"] = summary
+
+func _record_energy_turn(log: Dictionary, turn_energy: Dictionary) -> void:
+	var summary: Dictionary = log.get("energy_summary", {})
+	if summary.is_empty():
+		summary = _empty_energy_summary()
+	var turn_end_energy := int(turn_energy.get("turn_end_energy", 0))
+	summary["turns_total"] = int(summary.get("turns_total", 0)) + 1
+	summary["total_turn_end_energy"] = int(summary.get("total_turn_end_energy", 0)) + turn_end_energy
+	summary["average_unspent_energy"] = float(summary["total_turn_end_energy"]) / float(max(1, int(summary["turns_total"])))
+	summary["max_turn_end_energy"] = max(int(summary.get("max_turn_end_energy", 0)), turn_end_energy)
+	if turn_end_energy >= 2:
+		summary["high_unspent_energy_turns"] = int(summary.get("high_unspent_energy_turns", 0)) + 1
+	summary["energy_spent"] = int(summary.get("energy_spent", 0)) + int(turn_energy.get("energy_spent", 0))
+	summary["energy_gained"] = int(summary.get("energy_gained", 0)) + int(turn_energy.get("energy_gained", 0))
+	summary["cards_played"] = int(summary.get("cards_played", 0)) + int(turn_energy.get("cards_played", 0))
+	log["energy_summary"] = summary
+
+func _apply_economy_flags(log: Dictionary) -> void:
+	var summary: Dictionary = log.get("energy_summary", {})
+	if summary.is_empty():
+		summary = _empty_energy_summary()
+	var flags: Array = summary.get("economy_flags", [])
+	if str(log.get("character_id", "")) == "subaru":
+		if float(summary.get("average_unspent_energy", 0.0)) >= 1.5 and int(summary.get("high_unspent_energy_turns", 0)) >= 8:
+			if not flags.has("subaru_energy_overflow_watch"):
+				flags.append("subaru_energy_overflow_watch")
+	summary["economy_flags"] = flags
+	log["energy_summary"] = summary
+
 func _validate_run_log(log: Dictionary, required_result: String = "") -> void:
 	var character_id := str(log.get("character_id", ""))
 	var result := str(log.get("result", ""))
@@ -463,12 +535,23 @@ func _validate_run_log(log: Dictionary, required_result: String = "") -> void:
 	_expect_true(str(log.get("final_screen", "")) in ["map", "reward", "boss_reward", "run_end"], "%s auto-run 不應停在 blocking screen：%s" % [character_id, str(log.get("final_screen", ""))])
 	_expect_true((log.get("qa_report", {}) as Dictionary).has("deck_ids"), "%s auto-run log 應包含結構化 QA report" % character_id)
 	_expect_true(str(log.get("qa_report_text", "")).contains("QA 回報摘要"), "%s auto-run log 應包含可複製 QA report text" % character_id)
+	_validate_energy_summary(log)
 	if result == "defeated":
 		_expect_true(str(log.get("defeat_enemy_id", "")) != "", "%s auto-run 死亡時需記錄 defeat_enemy_id" % character_id)
 		_expect_true(int(log.get("defeat_floor", 0)) > 0, "%s auto-run 死亡時需記錄 defeat_floor" % character_id)
 		_expect_true(int(log.get("combat_start_hp", 0)) > 0, "%s auto-run 死亡時需記錄 combat_start_hp" % character_id)
 		_expect_true((log.get("combat_start_deck_ids", []) as Array).size() > 0, "%s auto-run 死亡時需記錄 combat_start_deck_ids" % character_id)
 		_expect_true(log.has("combat_start_relic_ids"), "%s auto-run 死亡時需記錄 combat_start_relic_ids" % character_id)
+
+func _validate_energy_summary(log: Dictionary) -> void:
+	var character_id := str(log.get("character_id", ""))
+	var summary: Dictionary = log.get("energy_summary", {})
+	_expect_true(not summary.is_empty(), "%s auto-run log 需包含 energy_summary" % character_id)
+	for key in ["combat_count", "turns_total", "average_unspent_energy", "max_turn_end_energy", "high_unspent_energy_turns"]:
+		_expect_true(summary.has(key), "%s energy_summary 需包含 %s" % [character_id, str(key)])
+	_expect_eq(int(summary.get("combat_count", 0)), int(log.get("combat_count", 0)), "%s energy_summary combat_count 應等於 combat_count" % character_id)
+	_expect_true(int(summary.get("turns_total", 0)) >= int(summary.get("combat_count", 0)), "%s energy_summary turns_total 需至少涵蓋 combat_count" % character_id)
+	_expect_true(summary.has("economy_flags"), "%s energy_summary 需包含 economy_flags" % character_id)
 
 func _update_log_from_app(log: Dictionary, app: Node) -> void:
 	var current_node: Dictionary = app.run_state.get_current_node(app.database)

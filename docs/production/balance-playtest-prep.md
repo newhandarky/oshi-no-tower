@@ -4,7 +4,7 @@
 
 ## 目的
 
-本文件整理 006-008 後的 headless 平衡基準，作為下一輪 manual full-run 前的交接入口。這輪不做 GUI/manual QA，也不把 automated proxy 當成 creative acceptance。
+本文件整理 006-016 後的 headless 平衡基準，作為下一輪 manual full-run 前的交接入口。這輪不做 GUI/manual QA，也不把 automated proxy 當成 creative acceptance。
 
 ## 目前 headless guardrail
 
@@ -34,9 +34,11 @@ manual full-run 仍是 Desktop Build Readiness 與 Creative Director final accep
 - 013 起，`multiseed_balance_probe_tests.gd` 會額外輸出 `multiseed_balance_probe_failure_cases`，集中列出每個死亡 seed 的角色、seed、Boss、死亡樓層、死亡敵人、中文 deck/relic 摘要與可複製 QA report text。這是 headless 端的分群入口，可用來對照玩家截圖，不需要再從 30 筆逐局 log 裡人工撈失敗案例。
 - 014 起，`multiseed_balance_probe_tests.gd` 也會輸出 `multiseed_balance_probe_failure_analysis`，把失敗案例聚合成角色別 `repeated_defeat_floors`、`repeated_defeat_enemy_ids`、`boss_failures`、`midrun_failures`、`curse_seen` 與 `likely_issues`。這是判讀輔助，不是自動調平衡指令；任何數值調整仍需看玩家體感或明確 repeated pattern。
 - 015 起，multiseed guard 會額外保護兩個 repeated pattern：AZKi 死於 `ssrb-giant-camouflage` 不可超過 2 次，Subaru 死於 `ssrb-debuff-check` 不可超過 1 次。manual full-run 時優先確認 AZKi boss 節奏是否仍拖太長，以及 Subaru 中段防守是否變穩但沒有能量過多感。
+- 016 起，`playable_demo_auto_run_log` 與 `multiseed_balance_probe_log` 都會輸出 `energy_summary`，包含 `combat_count`、`turns_total`、`average_unspent_energy`、`max_turn_end_energy`、`high_unspent_energy_turns`、`energy_spent`、`energy_gained`、`cards_played` 與 `economy_flags`。若 Subaru 同 seed 的 `average_unspent_energy >= 1.5` 且 `high_unspent_energy_turns >= 8`，會標記 `subaru_energy_overflow_watch` 供下一輪分析，但不會直接讓測試失敗或自動 nerf。
+- 016 multiseed 觀測結果：Subaru 6/10、Botan 7/10、AZKi 7/10 仍通過 guardrail；Subaru 角色層級 `average_unspent_energy` 約 0.15、`max_turn_end_energy` 為 2、`high_unspent_energy_turns` 為 8，未觸發 `subaru_energy_overflow_watch`。若手測仍覺得能量太多，請保留 seed，之後可用同 seed 的 `energy_summary` 對照是「能量真的花不完」還是「回合節奏 / 抽牌密度讓玩家感覺資源過剩」。
 
 ## 下一步建議
 
-1. 下一輪若能 manual QA，直接截取結算畫面的 `QA 回報摘要`，再補體感 / UI 問題；我可用截圖與 failure cases / failure analysis 對照。
-2. 優先手測 AZKi boss 戰回合感、Subaru 中段菁英壓力、以及 Subaru 是否仍有能量過多感。
-3. 若繼續自動化，下一步適合補 energy telemetry 或 boss pacing probe；不要在沒有玩家新回報時大幅調整敵人或 Botan。
+1. 下一輪若能 manual QA，直接截取結算畫面的 `QA 回報摘要`，再補體感 / UI 問題；我可用截圖與 failure cases / failure analysis / energy_summary 對照。
+2. 優先手測 AZKi boss 戰回合感、Subaru 中段菁英壓力、以及 Subaru 是否仍有能量過多感；如果覺得能量太多，保留該 run seed 方便對照 `subaru_energy_overflow_watch` 是否出現。
+3. 若繼續自動化，下一步適合做 targeted boss pacing / event-risk telemetry 或 reward path density probe；不要在沒有玩家新回報時大幅調整敵人或 Botan。
