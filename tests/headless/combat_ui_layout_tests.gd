@@ -815,10 +815,16 @@ func _test_event_chapter_start_and_run_end_labels_stay_inside_screen() -> void:
 
 	app.run_state.start_random_run(app.database, "subaru", 2026052012)
 	app.run_state.gold = 213
+	app.run_state.hp = 17
+	app.run_state.max_hp = 68
+	app.run_state.deck_ids.append_array(["subaru-encore-recall", "subaru-afterimage-table", "subaru-crowd-cover", "subaru-blue-wave", "curse-bad-connection"])
+	app.run_state.relic_ids.append_array(["duck-whistle", "shishiro-crosshair", "healing-chat", "energy-drink", "golden-superchat", "route-stamp"])
 	app.show_event({ "event_id": "recommendation-auction" })
 	await process_frame
-	_expect_true(_screen_text(app).contains("HP "), "事件畫面應顯示目前 HP 以利選擇")
+	_expect_true(_screen_text(app).contains("HP 17/68"), "事件畫面應顯示目前 HP 以利選擇")
 	_expect_true(_screen_text(app).contains("Gold 213"), "事件畫面應顯示目前 Gold 以利選擇")
+	_expect_true(_screen_text(app).contains("Deck "), "事件畫面應顯示 deck 數量")
+	_expect_true(_screen_text(app).contains("Relic "), "事件畫面應顯示 relic 數量")
 	_expect_controls_inside_screen(app, "event")
 
 	app.show_chapter_start_event()
@@ -827,12 +833,17 @@ func _test_event_chapter_start_and_run_end_labels_stay_inside_screen() -> void:
 	_expect_true(_screen_text(app).contains("Gold "), "Chapter start event 應顯示目前 Gold")
 	_expect_controls_inside_screen(app, "chapter_start_event")
 
-	app.run_state.deck_ids.append_array(["subaru-strike+", "subaru-strike+", "subaru-draw-breath+", "subaru-blue-wave", "subaru-new-oshi-call", "subaru-crowd-cover"])
-	app.run_state.relic_ids.append_array(["duck-whistle", "shishiro-crosshair", "healing-chat", "energy-drink", "golden-superchat", "route-stamp"])
+	app.run_state.deck_ids.append_array([
+		"subaru-strike+", "subaru-strike+", "subaru-draw-breath+", "subaru-blue-wave",
+		"subaru-new-oshi-call", "subaru-crowd-cover", "subaru-encore-recall+",
+		"subaru-afterimage-table+", "subaru-unstoppable-cheer+", "curse-comment-fire"
+	])
 	app.show_run_end(true)
 	await process_frame
 	_expect_true(_screen_text(app).contains("主要 deck/relic"), "結算畫面應用截圖友善的主要 deck/relic 欄位")
 	_expect_false(_screen_text(app).contains("subaru-strike+"), "結算畫面 deck/relic 摘要應優先使用中文名稱")
+	_expect_false(_screen_text(app).contains("boss_pacing_summary"), "結算畫面不應直接塞 structured telemetry 欄位，避免跑版")
+	_expect_false(_screen_text(app).contains("route_risk_summary"), "結算畫面不應直接塞 structured telemetry 欄位，避免跑版")
 	_expect_controls_inside_screen(app, "run_end")
 	app.queue_free()
 

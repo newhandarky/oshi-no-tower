@@ -44,6 +44,13 @@ func _test_balance_playtest_prep_doc_exists() -> void:
 	_expect_true(content.contains("average_unspent_energy"), "prep 文件需記錄 016 後平均未花能量欄位")
 	_expect_true(content.contains("high_unspent_energy_turns"), "prep 文件需記錄 016 後高剩餘能量回合欄位")
 	_expect_true(content.contains("subaru_energy_overflow_watch"), "prep 文件需記錄 016 後 Subaru energy overflow watch flag")
+	_expect_true(content.contains("combat_summaries"), "prep 文件需記錄 017 後逐戰鬥 summary")
+	_expect_true(content.contains("boss_pacing_summary"), "prep 文件需記錄 017 後 boss pacing telemetry")
+	_expect_true(content.contains("route_risk_summary"), "prep 文件需記錄 017 後事件風險 telemetry")
+	_expect_true(content.contains("run_health_flags"), "prep 文件需記錄 017 後 run health watch flags")
+	_expect_true(content.contains("azki_boss_pacing_watch"), "prep 文件需記錄 017 後 AZKi boss pacing watch flag")
+	_expect_true(content.contains("event_risk_compounding_watch"), "prep 文件需記錄 017 後事件風險疊加 watch flag")
+	_expect_true(content.contains("subaru_midrun_hp_pressure_watch"), "prep 文件需記錄 017 後 Subaru 中段 HP 壓力 watch flag")
 	_expect_true(content.contains("不要在沒有玩家新回報時大幅調整敵人或 Botan"), "prep 文件需保護 013 後下一步不要無根據 buff / nerf")
 
 func _expect_true(actual: bool, message: String) -> void:
