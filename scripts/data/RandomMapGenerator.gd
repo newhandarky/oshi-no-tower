@@ -34,13 +34,14 @@ func generate_map(database, seed: int, chapter_id: String = CHAPTER_1_ID) -> Dic
 		"lane": 0,
 		"outgoing": []
 	})
+	var event_history: Array[Dictionary] = []
 	for floor_index in range(FLOOR_ROOM_TYPES.size()):
 		var floor := floor_index + 1
 		var room_types: Array = FLOOR_ROOM_TYPES[floor_index].duplicate()
 		if rng.randi_range(0, 1) == 1:
 			room_types.reverse()
 		for lane in range(room_types.size()):
-			nodes.append(_build_node(database, str(room_types[lane]), floor, lane, rng, chapter_id))
+			nodes.append(_build_node(database, str(room_types[lane]), floor, lane, rng, chapter_id, event_history))
 	var boss_node := _copy_boss_node(database, rng, chapter_id)
 	boss_node["floor"] = BOSS_FLOOR
 	boss_node["lane"] = 0
@@ -57,7 +58,7 @@ func generate_map(database, seed: int, chapter_id: String = CHAPTER_1_ID) -> Dic
 		"nodes": nodes
 	}
 
-func _build_node(database, node_type: String, floor: int, lane: int, rng: RandomNumberGenerator, chapter_id: String) -> Dictionary:
+func _build_node(database, node_type: String, floor: int, lane: int, rng: RandomNumberGenerator, chapter_id: String, event_history: Array[Dictionary] = []) -> Dictionary:
 	var node: Dictionary = {
 		"id": "f%02d_l%d_%s" % [floor, lane, node_type],
 		"type": node_type,
@@ -72,11 +73,12 @@ func _build_node(database, node_type: String, floor: int, lane: int, rng: Random
 		"elite":
 			node["enemy_id"] = _pick_elite_enemy_id(database, rng, floor, chapter_id)
 		"event":
-			var event_node := _pick_event_node(database, rng, chapter_id)
+			var event_node := _pick_event_node(database, rng, chapter_id, event_history)
 			node["event_id"] = str(event_node.get("event_id", event_node.get("id", "")))
 			node["title"] = str(event_node.get("title", ""))
 			node["description"] = str(event_node.get("description", ""))
 			node["body"] = str(event_node.get("body", ""))
+			event_history.append(event_node.duplicate(true))
 	return node
 
 func _connect_layers(nodes: Array[Dictionary]) -> void:
@@ -182,7 +184,7 @@ func _event_node_for_floor(database, floor: int, rng: RandomNumberGenerator) -> 
 			return event_def.duplicate(true)
 	return _pick_event_node(database, rng)
 
-func _pick_event_node(database, rng: RandomNumberGenerator, chapter_id: String = CHAPTER_1_ID) -> Dictionary:
+func _pick_event_node(database, rng: RandomNumberGenerator, chapter_id: String = CHAPTER_1_ID, event_history: Array[Dictionary] = []) -> Dictionary:
 	var event_nodes: Array[Dictionary] = []
 	for event_def in database.events:
 		var event_chapter_id := str(event_def.get("chapter_id", CHAPTER_1_ID))
@@ -190,7 +192,54 @@ func _pick_event_node(database, rng: RandomNumberGenerator, chapter_id: String =
 			event_nodes.append(event_def)
 	if event_nodes.is_empty():
 		return {}
-	return event_nodes[rng.randi_range(0, event_nodes.size() - 1)].duplicate(true)
+	var candidates := event_nodes
+	if _recent_event_pressure(event_history) >= 3:
+		var lower_risk_candidates: Array[Dictionary] = []
+		for event_def in event_nodes:
+			if _event_route_risk_score(event_def) <= 2:
+				lower_risk_candidates.append(event_def)
+		if not lower_risk_candidates.is_empty():
+			candidates = lower_risk_candidates
+	return candidates[rng.randi_range(0, candidates.size() - 1)].duplicate(true)
+
+func _recent_event_pressure(event_history: Array[Dictionary]) -> int:
+	if event_history.is_empty():
+		return 0
+	var last_event: Dictionary = event_history[event_history.size() - 1]
+	return _event_route_risk_score(last_event)
+
+func _event_route_risk_score(event_def: Dictionary) -> int:
+	var score := 0
+	var tags: Array = event_def.get("tags", [])
+	if tags.has("risk"):
+		score += 1
+	if tags.has("curse"):
+		score += 2
+	if tags.has("battle"):
+		score += 1
+	for option_variant in event_def.get("options", []):
+		var option: Dictionary = option_variant
+		for outcome_variant in option.get("outcomes", []):
+			var outcome: Dictionary = outcome_variant
+			match str(outcome.get("action", "")):
+				"lose_hp":
+					if int(outcome.get("amount", 0)) >= 8:
+						score += 2
+					else:
+						score += 1
+				"spend_gold":
+					if int(outcome.get("amount", 0)) >= 35:
+						score += 1
+				"gain_gold":
+					if int(outcome.get("amount", 0)) <= -35:
+						score += 1
+				"add_random_curse", "add_card":
+					var card_id := str(outcome.get("card_id", ""))
+					if str(outcome.get("action", "")) == "add_random_curse" or card_id.begins_with("curse-"):
+						score += 2
+				"start_battle":
+					score += 1
+	return score
 
 func _chapter_title(chapter_id: String) -> String:
 	if chapter_id == CHAPTER_2_ID:

@@ -13,8 +13,8 @@
 | 角色 | 目前結果 | 重點 |
 | --- | --- | --- |
 | Subaru | Subaru 7/10 | 015 補基礎中段防守；018 再補 `subaru-encore-recall` / `subaru-afterimage-table` 的防守安全性，不新增能量。 |
-| Botan | Botan 7/10 | 006 後維持較高穩定度；009 不主動 buff Botan。 |
-| AZKi | AZKi 7/10 | 015 補 boss 收束效率；018 再補 `azki-laplus-combo` / `azki-necrobinder-finale` 的 late payoff，不 buff starter。 |
+| Botan | Botan 8/10 | 006 後維持較高穩定度；020-022 仍不主動 buff Botan。 |
+| AZKi | AZKi 8/10 | 015 補 boss 收束效率；018 再補 `azki-laplus-combo` / `azki-necrobinder-finale` 的 late payoff；021 只提高 late payoff reward sorting，不 buff starter。 |
 
 009 起，後續若再動平衡，應至少維持 `Subaru >= 5/10`、`Botan >= 5/10`、`AZKi >= 5/10`。若某角色跌破此基準，需先解釋是刻意換取體感、敵人壓力或 reward 密度調整，而不是無意退化。
 
@@ -41,9 +41,14 @@ manual full-run 仍是 Desktop Build Readiness 與 Creative Director final accep
 - 018 起，AZKi 只補 late payoff，不 buff starter：`azki-laplus-combo` 10x2 -> 11x2，`azki-necrobinder-finale` 22+10 -> 24+12 / 升級 26+12 -> 28+14。Subaru 只補中段防守與 payoff 安全性，不加能量：`subaru-encore-recall` block 4/7 -> 6/9，`subaru-afterimage-table` 條件 block 5/7 -> 6/9。Reward draft 也會在 AZKi late 缺 payoff、Subaru 中段 cheap-chain 但防守 / bridge 不足時更積極推對應 bridge / payoff；Botan 僅保留 guardrail，不主動 buff。
 - 018 multiseed 觀測結果：Subaru 7/10、Botan 7/10、AZKi 7/10 皆通過 guardrail；AZKi 死於 `ssrb-giant-camouflage` 維持 2 次內，Subaru 死於 `ssrb-debuff-check` 維持 1 次內。仍觀察到 `azki_boss_pacing_watch` 1 次、`subaru_midrun_hp_pressure_watch` 4 次、`event_risk_compounding_watch` 1 次，所以下輪 manual full-run 優先看這三類體感。
 - 019 起，UI 自檢重點是不把 `boss_pacing_summary`、`route_risk_summary`、`run_health_flags` 直接塞進結算畫面，避免再次造成長文跑版；畫面保留截圖可讀的 `QA 回報摘要`，完整分析資料留在 headless structured log。
+- 020 起，事件風險不只看彙總 `route_risk_summary`，也會在 structured log / `qa_report` 保留 `route_risk_events`，逐筆列出 `event_id`、`floor`、`option_label`、HP / Gold / curse / relic delta、是否 `starts_battle` 與 `risk_tags`。`RandomMapGenerator` 在近期高風險事件後會優先抽較低風險事件，目標是降低高失血、curse、Gold 花費連續疊加，不移除高風險事件。
+- 021 起，reward 成形不再只靠死亡後看 deck：`reward_choice_summaries` 記錄每次 reward 的 choices、選牌、角色定位 tags 與選前 / 選後 archetype snapshot；`deck_archetype_timeline` 記錄每次 reward 後核心 archetype 成形狀態；`key_pickup_floors` 追蹤 Subaru cheap-chain / tempo block / mid defense / payoff、Botan two-cost burst / setup-control / defense / payoff、AZKi marker / Laplus bridge / Laplus payoff / scaling 的首次取得樓層。multiseed 角色 summary 另有 `key_pickup_floor_totals` 與 `reward_choice_count`，方便判斷是 reward 沒給、proxy 沒選，還是成形太晚。
+- 021 gameplay 只保留 AZKi late payoff sorting 小調整：floor >= 10 且缺 Laplus payoff 時更積極推 `azki-necrobinder-finale`、`azki-laplus-combo`、`azki-laplus-release`、`azki-laplus-overflow`。Subaru pre-elite 防守排序曾試作但會讓 `subaru_midrun_hp_pressure_watch` 退化，因此未保留；Botan 仍只維持 guardrail。
+- 022 起，結算畫面維持短版 `QA 回報摘要`，不直接顯示 `route_risk_events`、`reward_choice_summaries`、`deck_archetype_timeline`、`key_pickup_floors`、`key_pickup_floor_totals` 等長 telemetry key。下一次手測仍只需要截結算畫面，再補一句體感 / UI 問題；我可以用同 seed 的 structured log 對照 route risk、reward timeline、energy summary 與 boss pacing。
+- 020-022 multiseed 觀測結果：Subaru 7/10、Botan 8/10、AZKi 8/10 皆通過 guardrail；AZKi 死於 `ssrb-giant-camouflage` 維持 2 次內，Subaru 未出現 `ssrb-debuff-check` 重複死亡。仍觀察到 `azki_boss_pacing_watch` 1 次、`subaru_midrun_hp_pressure_watch` 3 次、`event_risk_compounding_watch` 1 次，所以下輪 manual full-run 仍優先看 AZKi boss turns、Subaru floor 7-11 低血壓力、事件風險疊加，以及 Subaru 能量體感對照。
 
 ## 下一步建議
 
-1. 下一輪若能 manual QA，直接截取結算畫面的 `QA 回報摘要`，再補體感 / UI 問題；我可用截圖與 failure cases / failure analysis / energy_summary / boss_pacing_summary / route_risk_summary 對照。
+1. 下一輪若能 manual QA，直接截取結算畫面的 `QA 回報摘要`，再補體感 / UI 問題；我可用截圖與 failure cases / failure analysis / energy_summary / boss_pacing_summary / route_risk_summary / route_risk_events / reward_choice_summaries / deck_archetype_timeline / key_pickup_floors 對照。
 2. 優先手測 AZKi boss turns 是否仍拖太長、Subaru floor 7-11 是否仍低血硬撐、事件路線是否因失血 / curse / Gold 花費疊加而讓 boss 前資源過低，以及 Subaru 是否仍有能量過多感。
-3. 若繼續自動化，下一步適合做 reward path density probe 或 event-risk tuning；不要在沒有玩家新回報時大幅調整敵人或 Botan。
+3. 若繼續自動化，下一步適合把 watch flags 對應到更精準的 fixture 或 seed replay；不要在沒有玩家新回報時大幅調整敵人或 Botan。

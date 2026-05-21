@@ -51,6 +51,11 @@ func _test_balance_playtest_prep_doc_exists() -> void:
 	_expect_true(content.contains("azki_boss_pacing_watch"), "prep 文件需記錄 017 後 AZKi boss pacing watch flag")
 	_expect_true(content.contains("event_risk_compounding_watch"), "prep 文件需記錄 017 後事件風險疊加 watch flag")
 	_expect_true(content.contains("subaru_midrun_hp_pressure_watch"), "prep 文件需記錄 017 後 Subaru 中段 HP 壓力 watch flag")
+	_expect_true(content.contains("route_risk_events"), "prep 文件需記錄 020 後逐事件風險明細")
+	_expect_true(content.contains("reward_choice_summaries"), "prep 文件需記錄 021 後 reward choice telemetry")
+	_expect_true(content.contains("deck_archetype_timeline"), "prep 文件需記錄 021 後 deck archetype timeline")
+	_expect_true(content.contains("key_pickup_floors"), "prep 文件需記錄 021 後 key pickup floors")
+	_expect_true(content.contains("key_pickup_floor_totals"), "prep 文件需記錄 021 後角色層級 pickup 聚合")
 	_expect_true(content.contains("不要在沒有玩家新回報時大幅調整敵人或 Botan"), "prep 文件需保護 013 後下一步不要無根據 buff / nerf")
 
 func _expect_true(actual: bool, message: String) -> void:

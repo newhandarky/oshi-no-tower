@@ -52,6 +52,10 @@ func _test_run_end_screen_includes_manual_qa_report_fields() -> void:
 		_expect_true(text.contains(expected), "結算畫面應包含可回報欄位：%s" % expected)
 	_expect_false(text.contains("subaru-combo-boost"), "結算畫面應顯示中文卡名，不直接顯示 card id")
 	_expect_false(text.contains("duck-whistle"), "結算畫面應顯示中文 relic 名，不直接顯示 relic id")
+	_expect_false(text.contains("route_risk_events"), "結算畫面不應直接顯示逐事件 telemetry key")
+	_expect_false(text.contains("reward_choice_summaries"), "結算畫面不應直接顯示 reward telemetry key")
+	_expect_false(text.contains("deck_archetype_timeline"), "結算畫面不應直接顯示 archetype timeline key")
+	_expect_false(text.contains("key_pickup_floors"), "結算畫面不應直接顯示 pickup telemetry key")
 	app.queue_free()
 
 func _test_manual_qa_report_snapshot_is_structured_for_headless_logs() -> void:

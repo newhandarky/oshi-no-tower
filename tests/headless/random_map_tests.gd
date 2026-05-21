@@ -17,6 +17,7 @@ func _run() -> void:
 	_test_generated_map_is_connected_to_boss()
 	_test_generated_map_references_valid_content()
 	_test_random_map_events_are_not_floor_locked()
+	_test_event_route_risk_score_is_available_for_route_tuning()
 	_test_generated_map_applies_late_floor_pressure_curve()
 	_test_runtime_database_entrypoint_matches_generator()
 
@@ -104,6 +105,12 @@ func _test_random_map_events_are_not_floor_locked() -> void:
 			if int(node.get("floor", -1)) == 2 and str(node.get("type", "")) == "event":
 				floor_two_event_ids[str(node.get("event_id", ""))] = true
 	_expect_true(floor_two_event_ids.size() >= 2, "第 2 層事件不可固定為同一個指定事件")
+
+func _test_event_route_risk_score_is_available_for_route_tuning() -> void:
+	var high_risk_event := database.get_event("important-announcement-countdown")
+	var low_risk_event := database.get_event("superchat-time")
+	_expect_true(generator._event_route_risk_score(high_risk_event) >= 3, "高失血 / relic 事件需被標成高 route risk")
+	_expect_true(generator._event_route_risk_score(low_risk_event) <= 2, "純 Gold / 整理型事件不應被標成高 route risk")
 
 func _test_generated_map_applies_late_floor_pressure_curve() -> void:
 	var late_battle_ids := {
