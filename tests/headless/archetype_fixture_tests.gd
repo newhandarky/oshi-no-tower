@@ -15,11 +15,13 @@ func _initialize() -> void:
 
 func _run() -> void:
 	_test_subaru_cheap_chain_early_fixture_beats_debuff_pressure()
+	_test_subaru_natural_midrun_fixture_beats_repeated_debuff_check()
 	_test_subaru_cheap_chain_late_fixture_beats_boss_warning()
 	_test_botan_fortress_early_fixture_beats_block_puzzle()
 	_test_botan_fortress_late_fixture_beats_high_attack_boss()
 	_test_azki_marker_laplus_early_fixture_beats_multi_hit()
 	_test_azki_marker_laplus_late_fixture_beats_elite_pressure()
+	_test_azki_late_fixture_beats_camouflage_boss_pacing()
 
 	if failures.is_empty():
 		print("archetype_fixture_tests: ok")
@@ -40,6 +42,18 @@ func _test_subaru_cheap_chain_early_fixture_beats_debuff_pressure() -> void:
 	var character := database.get_character("subaru")
 	var result := _resolve_fixture(78, deck, database.get_enemy("ssrb-debuff-check"), character.get("passive", {}), {})
 	_expect_victory_with_hp(result, 18, "Subaru cheap_chain early_formed fixture 應能解 debuff pressure")
+
+func _test_subaru_natural_midrun_fixture_beats_repeated_debuff_check() -> void:
+	var deck := database.resolve_cards([
+		"subaru-strike+", "subaru-strike", "subaru-guard+", "subaru-guard",
+		"subaru-duck-rush", "subaru-draw-breath", "subaru-tsukkomi",
+		"subaru-combo-boost", "subaru-opening-quack", "subaru-duck-tempo",
+		"subaru-crowd-cover", "subaru-rhythm-guard", "subaru-new-oshi-call",
+		"subaru-desk-reaction", "subaru-afterimage-table"
+	])
+	var character := database.get_character("subaru")
+	var result := _resolve_fixture(78, deck, database.get_enemy("ssrb-debuff-check"), character.get("passive", {}), {})
+	_expect_victory_with_hp_and_turn_cap(result, 16, 14, "Subaru natural midrun fixture 應能解 repeated debuff-check 壓力")
 
 func _test_subaru_cheap_chain_late_fixture_beats_boss_warning() -> void:
 	var deck := database.resolve_cards([
@@ -98,6 +112,18 @@ func _test_azki_marker_laplus_late_fixture_beats_elite_pressure() -> void:
 	var character := database.get_character("azki")
 	var result := _resolve_fixture(124, deck, database.get_enemy("notification-storm-elite"), character.get("passive", {}), character.get("summon", {}))
 	_expect_victory_with_hp(result, 18, "AZKi marker_laplus late_formed fixture 應能解 elite / boss 類壓力")
+
+func _test_azki_late_fixture_beats_camouflage_boss_pacing() -> void:
+	var deck := database.resolve_cards([
+		"azki-phantom-route+", "azki-route-marker+", "azki-necro-recall+",
+		"azki-laplus-guard-order+", "azki-dark-tether+", "azki-marker-echo+",
+		"azki-laplus-release+", "azki-laplus-overflow+", "azki-necrobinder-finale+",
+		"azki-laplus-contract+", "azki-laplus-cover+", "azki-coordinate-barrage+",
+		"azki-open-route+", "azki-safe-route+", "azki-laplus-crash+"
+	])
+	var character := database.get_character("azki")
+	var result := _resolve_fixture(124, deck, database.get_enemy("ssrb-giant-camouflage"), character.get("passive", {}), character.get("summon", {}))
+	_expect_victory_with_hp_and_turn_cap(result, 14, 12, "AZKi late formed fixture 應能在合理節奏內解 camouflage boss")
 
 func _resolve_fixture(player_hp: int, deck: Array[Dictionary], enemy: Dictionary, passive: Dictionary, summon: Dictionary) -> Dictionary:
 	var state = combat_engine.start_combat(player_hp, player_hp, deck, enemy, [], false, passive, summon)
@@ -190,6 +216,11 @@ func _effect_score(effect: Dictionary, enemy_attacking: bool) -> float:
 func _expect_victory_with_hp(result: Dictionary, min_hp: int, message: String) -> void:
 	_expect_eq(str(result.get("outcome", "")), "victory", "%s outcome" % message)
 	_expect_true(int(result.get("turns", 99)) <= MAX_TURNS, "%s turn guardrail" % message)
+	_expect_true(int(result.get("player_hp", 0)) >= min_hp, "%s min HP guardrail，result=%s" % [message, JSON.stringify(result)])
+
+func _expect_victory_with_hp_and_turn_cap(result: Dictionary, min_hp: int, max_turns: int, message: String) -> void:
+	_expect_eq(str(result.get("outcome", "")), "victory", "%s outcome" % message)
+	_expect_true(int(result.get("turns", 99)) <= max_turns, "%s turn cap %d，result=%s" % [message, max_turns, JSON.stringify(result)])
 	_expect_true(int(result.get("player_hp", 0)) >= min_hp, "%s min HP guardrail，result=%s" % [message, JSON.stringify(result)])
 
 func _expect_true(actual: bool, message: String) -> void:

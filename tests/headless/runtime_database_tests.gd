@@ -28,6 +28,8 @@ func _run() -> void:
 	_test_subaru_starter_payoff_has_elite_damage_floor()
 	_test_azki_late_stability_cards_have_direct_block()
 	_test_azki_pacing_cards_have_damage_floor()
+	_test_015_subaru_midrun_defense_cards_have_no_energy_buff()
+	_test_015_azki_payoff_cards_have_boss_pacing_floor()
 	_test_enemies_have_valid_actions_and_assets()
 	_test_enemy_pressure_progression_is_balanced()
 	_test_map_nodes_reference_valid_enemies()
@@ -333,6 +335,30 @@ func _test_azki_pacing_cards_have_damage_floor() -> void:
 	_expect_true(_card_effect_amount(database.get_card("azki-map-shot"), "damage") >= 10, "AZKi starter 座標彈需改善普攻節奏")
 	_expect_true(_card_effect_amount(database.get_card("azki-pinpoint"), "damage") >= 7, "AZKi 精準標記需改善 setup 回合輸出")
 	_expect_true(_card_effect_amount(database.get_card("azki-laplus-dash"), "damage") >= 10, "AZKi Laplus 衝刺需改善中段擊殺效率")
+
+func _test_015_subaru_midrun_defense_cards_have_no_energy_buff() -> void:
+	var rhythm_guard := database.get_card("subaru-rhythm-guard")
+	var crowd_cover := database.get_card("subaru-crowd-cover")
+	var new_oshi_call := database.get_card("subaru-new-oshi-call")
+	_expect_true(_card_effect_amount(rhythm_guard, "block") >= 9, "015 Subaru rhythm-guard 應小幅補中段防守")
+	_expect_true(_card_effect_amount(crowd_cover, "block") >= 9, "015 Subaru crowd-cover 應小幅補中段防守")
+	_expect_true(_card_upgrade_effect_amount(crowd_cover, "block") >= 12, "015 Subaru crowd-cover+ 應維持升級防守價值")
+	_expect_true(_card_effect_amount(new_oshi_call, "block") >= 6, "015 Subaru new-oshi-call 應補足自然路線 0 費小防守")
+	_expect_false(_card_has_effect(rhythm_guard, "energy"), "015 不應用 rhythm-guard 增加 Subaru 能量")
+	_expect_false(_card_has_effect(crowd_cover, "energy"), "015 不應用 crowd-cover 增加 Subaru 能量")
+	_expect_false(_card_has_effect(new_oshi_call, "energy"), "015 不應用 new-oshi-call 增加 Subaru 能量")
+
+func _test_015_azki_payoff_cards_have_boss_pacing_floor() -> void:
+	var coordinate_barrage := database.get_card("azki-coordinate-barrage")
+	var laplus_release := database.get_card("azki-laplus-release")
+	var laplus_overflow := database.get_card("azki-laplus-overflow")
+	_expect_true(_card_damage_total(coordinate_barrage) >= 9, "015 AZKi coordinate-barrage 應提供更好的 boss pacing")
+	_expect_true(_card_effect_amount(laplus_release, "damage") >= 14, "015 AZKi laplus-release 基礎傷害應補收束")
+	_expect_true(_card_conditional_summon_hp_base(laplus_release) >= 6, "015 AZKi laplus-release 條件追加 base 應補收束")
+	_expect_true(_card_upgrade_effect_amount(laplus_release, "damage") >= 16, "015 AZKi laplus-release+ 基礎傷害應補收束")
+	_expect_true(_card_conditional_summon_hp_base(laplus_release, true) >= 8, "015 AZKi laplus-release+ 條件追加 base 應補收束")
+	_expect_true(_card_summon_hp_base(laplus_overflow) >= 14, "015 AZKi laplus-overflow base 應補 boss 收束")
+	_expect_true(_card_summon_hp_base(laplus_overflow, true) >= 18, "015 AZKi laplus-overflow+ base 應補 boss 收束")
 
 func _test_enemies_have_valid_actions_and_assets() -> void:
 	var allowed_actions := { "attack": true, "block": true, "attack_block": true, "debuff": true, "buff": true }
@@ -941,6 +967,36 @@ func _card_effect_amount(card: Dictionary, effect_type: String) -> int:
 	for effect in card.get("effects", []):
 		if str(effect.get("type", "")) == effect_type:
 			return int(effect.get("amount", 0))
+	return 0
+
+func _card_upgrade_effect_amount(card: Dictionary, effect_type: String) -> int:
+	for effect in card.get("upgrade_effects", []):
+		if str(effect.get("type", "")) == effect_type:
+			return int(effect.get("amount", 0))
+	return 0
+
+func _card_damage_total(card: Dictionary) -> int:
+	for effect in card.get("effects", []):
+		if str(effect.get("type", "")) == "damage":
+			return int(effect.get("amount", 0)) * max(1, int(effect.get("hits", 1)))
+	return 0
+
+func _card_summon_hp_base(card: Dictionary, upgraded := false) -> int:
+	var effects: Array = card.get("upgrade_effects", []) if upgraded else card.get("effects", [])
+	for effect in effects:
+		if str(effect.get("type", "")) == "summon_hp_damage":
+			return int(effect.get("base", 0))
+	return 0
+
+func _card_conditional_summon_hp_base(card: Dictionary, upgraded := false) -> int:
+	var effects: Array = card.get("upgrade_effects", []) if upgraded else card.get("effects", [])
+	for effect in effects:
+		if str(effect.get("type", "")) != "conditional":
+			continue
+		for nested_variant in effect.get("effects", []):
+			var nested: Dictionary = nested_variant
+			if str(nested.get("type", "")) == "summon_hp_damage":
+				return int(nested.get("base", 0))
 	return 0
 
 func _collect_v1_effect_schema(effect: Dictionary, schema_flags: Dictionary) -> void:

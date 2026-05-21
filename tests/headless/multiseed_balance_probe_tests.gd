@@ -501,6 +501,11 @@ func _validate_failure_analysis(analysis: Dictionary) -> void:
 		_expect_true(stats.has("repeated_defeat_floors"), "%s failure analysis 需包含 repeated_defeat_floors" % character_id)
 		_expect_true(stats.has("repeated_defeat_enemy_ids"), "%s failure analysis 需包含 repeated_defeat_enemy_ids" % character_id)
 		_expect_true(stats.has("likely_issues"), "%s failure analysis 需包含 likely_issues" % character_id)
+		var defeat_enemy_ids: Dictionary = stats.get("defeat_enemy_ids", {})
+		if character_id == "azki":
+			_expect_true(int(defeat_enemy_ids.get("ssrb-giant-camouflage", 0)) <= 2, "015 AZKi 不應反覆死於 ssrb-giant-camouflage boss")
+		if character_id == "subaru":
+			_expect_true(int(defeat_enemy_ids.get("ssrb-debuff-check", 0)) <= 1, "015 Subaru 不應反覆死於 ssrb-debuff-check 中段壓力")
 
 func _increment_count(counts: Dictionary, key: String) -> void:
 	if key == "":
