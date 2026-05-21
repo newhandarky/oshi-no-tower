@@ -844,6 +844,11 @@ func _test_event_chapter_start_and_run_end_labels_stay_inside_screen() -> void:
 	_expect_false(_screen_text(app).contains("subaru-strike+"), "結算畫面 deck/relic 摘要應優先使用中文名稱")
 	_expect_false(_screen_text(app).contains("boss_pacing_summary"), "結算畫面不應直接塞 structured telemetry 欄位，避免跑版")
 	_expect_false(_screen_text(app).contains("route_risk_summary"), "結算畫面不應直接塞 structured telemetry 欄位，避免跑版")
+	_expect_false(_screen_text(app).contains("run_health_flags"), "結算畫面不應直接塞 structured telemetry 欄位，避免跑版")
+	_expect_false(_screen_text(app).contains("route_risk_events"), "結算畫面不應直接塞 structured telemetry 欄位，避免跑版")
+	_expect_false(_screen_text(app).contains("reward_choice_summaries"), "結算畫面不應直接塞 structured telemetry 欄位，避免跑版")
+	_expect_false(_screen_text(app).contains("deck_archetype_timeline"), "結算畫面不應直接塞 structured telemetry 欄位，避免跑版")
+	_expect_false(_screen_text(app).contains("key_pickup_floors"), "結算畫面不應直接塞 structured telemetry 欄位，避免跑版")
 	_expect_controls_inside_screen(app, "run_end")
 	app.queue_free()
 
@@ -1057,6 +1062,7 @@ func _test_shop_cards_show_price_badges_and_descriptions() -> void:
 		_expect_true(remove_text.contains("75g"), "移除卡服務左上角應顯示金額")
 		_expect_true(remove_text.contains("選擇 1 張牌從牌組移除"), "移除卡服務需顯示功能說明")
 	_expect_true(_shop_has_sale_badge(shop_buttons), "商店每次應固定顯示一個特價商品")
+	_expect_controls_inside_screen(app, "shop")
 	app.queue_free()
 
 func _test_reward_and_shop_nonstarter_cards_use_art_textures() -> void:
@@ -1145,6 +1151,7 @@ func _test_reward_cards_have_safe_text_labels() -> void:
 			_expect_true(label.position.x + label.size.x <= button.size.x - 10.0, "卡牌文字不可超出卡牌寬度")
 		_expect_eq(labels[1].autowrap_mode, TextServer.AUTOWRAP_OFF, "卡牌名稱不可換行")
 		_expect_true(labels[3].size.y <= button.size.y * 0.42, "卡牌描述需限制在卡牌下半部安全高度")
+	_expect_controls_inside_screen(app, "reward")
 	app.queue_free()
 
 func _test_random_map_boss_label_handles_long_names() -> void:
